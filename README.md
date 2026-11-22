@@ -27,7 +27,8 @@ Muse's hosted machine rather than your laptop.
 ## Install
 
 For this fork's Cloudflare R2 setup, start with [the R2 installation
-guide](INSTRUCTIONS.md).
+guide](INSTRUCTIONS.md) or give [the agent setup guide](AGENT_INSTALL.md) to
+your coding agent.
 
 **macOS and Linux:**
 
