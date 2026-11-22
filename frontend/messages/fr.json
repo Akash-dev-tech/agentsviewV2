@@ -1,4 +1,6 @@
 {
+  "sidebar_filters_owner_name": "Nom du propriétaire",
+  "sidebar_filters_owner_email": "E-mail du propriétaire",
   "data_reclassify_session_preview_filtered_empty": "Aucune session à prévisualiser. Les sessions automatisées sont masquées ; utilisez le bouton de filtre pour les inclure.",
   "data_batch_saving_progress": [
     {

@@ -587,6 +587,8 @@ type SessionFilter struct {
 	ProjectLabels  []string
 	ExcludeProject string // exclude sessions with this project name
 	Machine        string
+	OwnerName      string // substring of the R2 owner's email local part as words
+	OwnerEmail     string // substring of the R2 owner's email
 	// GitBranch is a branchListSep-joined list of opaque (project, branch) tokens (EncodeBranchFilterToken).
 	GitBranch string
 	// GitBranchExact matches one raw branch name in any project. It is ANDed

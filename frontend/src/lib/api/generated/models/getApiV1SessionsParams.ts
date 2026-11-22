@@ -24,6 +24,14 @@ export type GetApiV1SessionsParams = {
    */
   machine?: string;
   /**
+   * Filter by the name derived from an R2 owner's email local part
+   */
+  owner_name?: string;
+  /**
+   * Filter by the R2 owner email in the users/<email> object prefix
+   */
+  owner_email?: string;
+  /**
    * Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
    */
   git_branch?: string;

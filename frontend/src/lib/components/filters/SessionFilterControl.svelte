@@ -19,7 +19,7 @@
     groupMode?: GroupMode;
     showDisplay?: boolean;
     showStarred?: boolean;
-    /** Show label and pull request filters. Pages whose data ignores
+    /** Show owner, label and pull request filters. Pages whose data ignores
      *  them (usage, analytics) turn this off. */
     showLabelFilters?: boolean;
     align?: "left" | "right";
@@ -54,6 +54,11 @@
   let machineSearch = $state("");
   let labelDraft = $state("");
   let prDraft = $state("");
+  let ownerDraft = $state({ ownerName: "", ownerEmail: "" });
+  const ownerFields = $derived([
+    { field: "ownerName", label: m.sidebar_filters_owner_name() },
+    { field: "ownerEmail", label: m.sidebar_filters_owner_email() },
+  ] as const);
 
   const sortedAgents = $derived.by(() => {
     const agents = [...sessions.agents].sort(
@@ -84,6 +89,7 @@
       machineSearch = "";
       labelDraft = "";
       prDraft = "";
+      ownerDraft = { ownerName: "", ownerEmail: "" };
     }
   });
 
@@ -416,6 +422,30 @@
       </div>
     {/if}
     {#if showLabelFilters}
+      {#each ownerFields as { field, label } (field)}
+        <div class="filter-section">
+          <div class="filter-section-label">{label}</div>
+          {#if sessions.filters[field]}
+            <button class="filter-toggle active" onclick={() => sessions.setOwnerFilter(field, "")}>
+              <span class="toggle-check on"></span>
+              <span class="filter-value">{sessions.filters[field]}</span>
+            </button>
+          {/if}
+          <TextInput
+            size="sm"
+            block
+            bind:value={ownerDraft[field]}
+            placeholder={label}
+            ariaLabel={label}
+            onkeydown={(event) => {
+              if (event.key !== "Enter" || event.isComposing || !ownerDraft[field].trim()) return;
+              event.preventDefault();
+              sessions.setOwnerFilter(field, ownerDraft[field]);
+              ownerDraft[field] = "";
+            }}
+          />
+        </div>
+      {/each}
       <div class="filter-section">
         <div class="filter-section-label">{m.sidebar_filters_labels()}</div>
         {#each sessions.filters.labels as label (label)}

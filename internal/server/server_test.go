@@ -1684,6 +1684,56 @@ func TestListSessions_ExcludeProjectFilter(t *testing.T) {
 	}
 }
 
+func TestSessionOwnerFilters(t *testing.T) {
+	te := setup(t)
+	sources := map[string]string{
+		"name-match":  "s3://example/users/alex.morgan@example.net/laptop/codex/sessions/a.jsonl",
+		"same-name":   "s3://example/users/alex-morgan@example.org/mac/claude/b.jsonl",
+		"other-owner": "s3://example/users/jo.lee@example.net/laptop/claude/alex.morgan@example.net/c.jsonl",
+		"local":       "/local/users/alex.morgan@example.net/laptop/d.jsonl",
+		"nested":      "s3://example/archive/users/alex.morgan@example.net/laptop/e.jsonl",
+		"no-bucket":   "s3:///users/alex.morgan@example.net/laptop/f.jsonl",
+	}
+	for id, source := range sources {
+		te.seedSession(t, id, "demo", 3, func(s *db.Session) { s.FilePath = new(source) })
+	}
+	for _, tt := range []struct {
+		name, query string
+		want        []string
+	}{
+		{"name", "owner_name=Alex+Morgan", []string{"name-match", "same-name"}},
+		{"email", "owner_email=JO.LEE%40EXAMPLE.NET", []string{"other-owner"}},
+		{"combined", "owner_name=alex&owner_email=%40example.net", []string{"name-match"}},
+		{"literal wildcard", "owner_email=%25", nil},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, endpoint := range []string{"/api/v1/sessions", "/api/v1/sessions/sidebar-index"} {
+				w := te.get(t, endpoint+"?limit=20&"+tt.query)
+				assertStatus(t, w, http.StatusOK)
+				result := decode[sessionListResponse](t, w)
+				var ids []string
+				for _, row := range result.Sessions {
+					ids = append(ids, row.ID)
+				}
+				assert.ElementsMatch(t, tt.want, ids, endpoint)
+			}
+		})
+	}
+
+	endpoint := "/api/v1/sessions/sidebar-index?limit=1&owner_name=Alex+Morgan"
+	w := te.get(t, endpoint)
+	assertStatus(t, w, http.StatusOK)
+	first := decode[db.SidebarSessionIndex](t, w)
+	require.Len(t, first.Sessions, 1)
+	require.NotEmpty(t, first.NextCursor)
+	assert.Equal(t, 2, first.Total)
+	w = te.get(t, endpoint+"&cursor="+url.QueryEscape(first.NextCursor))
+	assertStatus(t, w, http.StatusOK)
+	second := decode[db.SidebarSessionIndex](t, w)
+	require.Len(t, second.Sessions, 1)
+	assert.ElementsMatch(t, []string{"name-match", "same-name"}, []string{first.Sessions[0].ID, second.Sessions[0].ID})
+}
+
 func TestListSessions_ExcludeOneShotDefault(t *testing.T) {
 	te := setup(t)
 	te.seedSession(t, "s1", "my-app", 5, func(s *db.Session) {

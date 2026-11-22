@@ -23,6 +23,8 @@ afterEach(() => {
   sessions.filters.minUserMessages = 0;
   sessions.filters.labels = [];
   sessions.filters.pr = "";
+  delete sessions.filters.ownerName;
+  delete sessions.filters.ownerEmail;
   vi.restoreAllMocks();
 });
 
@@ -199,13 +201,26 @@ describe("SessionFilterControl label and pull request filters", () => {
     expect(sessions.filters.pr).toBe("");
   });
 
-  it("preserves hidden label and pull request filters when shared filters clear", async () => {
+  it("applies owner filters together and clears them independently", async () => {
+    await openControl();
+    await submit(screen.getByRole("textbox", { name: "Owner name" }), " Alex Morgan ");
+    await submit(screen.getByRole("textbox", { name: "Owner email" }), "alex@example.net");
+    expect(sessions.filters.ownerName).toBe("Alex Morgan");
+    expect(sessions.filters.ownerEmail).toBe("alex@example.net");
+    await fireEvent.click(screen.getByRole("button", { name: "Alex Morgan" }));
+    expect(sessions.filters.ownerName).toBeUndefined();
+    expect(sessions.filters.ownerEmail).toBe("alex@example.net");
+  });
+
+  it("preserves hidden session filters when shared filters clear", async () => {
     sessions.filters.labels = ["ticket=example"];
     sessions.filters.pr = "acme/widgets#42";
+    sessions.filters.ownerEmail = "alex@example.net";
     await openControl({ showLabelFilters: false });
 
     expect(screen.queryByRole("textbox", { name: "Filter by label" })).toBeNull();
     expect(screen.queryByRole("textbox", { name: "Filter by pull request" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Owner email" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
 
     sessions.filters.agent = "claude";
@@ -214,5 +229,6 @@ describe("SessionFilterControl label and pull request filters", () => {
     expect(sessions.filters.agent).toBe("");
     expect(sessions.filters.labels).toEqual(["ticket=example"]);
     expect(sessions.filters.pr).toBe("acme/widgets#42");
+    expect(sessions.filters.ownerEmail).toBe("alex@example.net");
   });
 });

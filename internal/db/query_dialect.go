@@ -183,6 +183,7 @@ func outerSessionID(q func(string) string) string {
 func SQLiteQueryDialect() QueryDialect {
 	return QueryDialect{
 		name:               "sqlite",
+		position:           func(haystack, needle string) string { return "instr(" + haystack + ", " + needle + ")" },
 		placeholderStyle:   placeholderQuestion,
 		trueLiteral:        "1",
 		falseLiteral:       "0",
@@ -865,6 +866,9 @@ func sessionFilterPredicates(
 		preds = append(preds,
 			b.MachinePredicate(q("id"), q("machine"), splitCSV(f.Machine)))
 	}
+	if name, email := strings.TrimSpace(f.OwnerName), strings.TrimSpace(f.OwnerEmail); name != "" || email != "" {
+		preds = append(preds, r2OwnerPredicates(b, q("file_path"), name, email)...)
+	}
 	if f.GitBranch != "" {
 		preds = append(preds, BranchPairPredicate(
 			q("project"), q("git_branch"), f.GitBranch,
@@ -941,6 +945,42 @@ func sessionFilterPredicates(
 		preds = append(preds, b.dialect.starredPredicateSQL(q("id")))
 	}
 	return preds, oneShotPred
+}
+
+// r2OwnerPredicates reads the owner from s3://bucket/users/email/object.
+// The name filter treats dots, underscores, and hyphens in the email's
+// local part as spaces. The domain and the remaining object key are ignored.
+func r2OwnerPredicates(b *QueryBuilder, path, name, email string) []string {
+	position := b.dialect.Position
+	bucketAndKey := "substring(" + path + ", 6)"
+	bucketEnd := position(bucketAndKey, "'/'")
+	key := "substring(" + bucketAndKey + ", " + bucketEnd + " + 1)"
+	ownerAndObject := "substring(" + key + ", 7)"
+	owner := "substring(" + ownerAndObject + ", 1, NULLIF(" + position(ownerAndObject, "'/'") + ", 0) - 1)"
+	at := position(owner, "'@'")
+	preds := []string{
+		position(path, "'s3://'") + " = 1",
+		bucketEnd + " > 1",
+		position(key, "'users/'") + " = 1",
+		at + " > 1",
+		at + " < length(" + owner + ")",
+	}
+	if name != "" {
+		localPart := "substring(" + owner + ", 1, NULLIF(" + at + ", 0) - 1)"
+		replaceFn := "replace"
+		if b.dialect.name == "clickhouse" {
+			replaceFn = "replaceAll"
+		}
+		displayName := localPart
+		for _, separator := range []string{".", "_", "-"} {
+			displayName = replaceFn + "(" + displayName + ", '" + separator + "', ' ')"
+		}
+		preds = append(preds, b.ContainsPredicate(displayName, name))
+	}
+	if email != "" {
+		preds = append(preds, b.ContainsPredicate(owner, email))
+	}
+	return preds
 }
 
 // HasAnnotationFilter reports whether the filter selects sessions by label

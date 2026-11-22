@@ -24232,6 +24232,12 @@ type GetAPIV1SessionsQuery struct {
 	// Machine Exact machine ID or alias, comma-separated IDs or aliases, or a unique whole display label (case-sensitive). Blank means all machines; unknown or ambiguous values return HTTP 400.
 	Machine *string `json:"machine,omitempty"`
 
+	// OwnerName Filter by the name derived from an R2 owner's email local part
+	OwnerName *string `json:"owner_name,omitempty"`
+
+	// OwnerEmail Filter by the R2 owner email in the users/<email> object prefix
+	OwnerEmail *string `json:"owner_email,omitempty"`
+
 	// GitBranch Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
 	GitBranch *string `json:"git_branch,omitempty"`
 

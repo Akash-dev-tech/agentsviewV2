@@ -1,4 +1,6 @@
 {
+  "sidebar_filters_owner_name": "Sahibin adı",
+  "sidebar_filters_owner_email": "Sahibin e-poçtu",
   "data_reclassify_session_preview_filtered_empty": "Önbaxış üçün sessiya yoxdur. Avtomatlaşdırılmış sessiyalar gizlədilib; onları daxil etmək üçün süzgəc düyməsindən istifadə edin.",
   "data_batch_saving_progress": [
     {

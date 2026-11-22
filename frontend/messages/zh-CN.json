@@ -1,4 +1,6 @@
 {
+  "sidebar_filters_owner_name": "所有者姓名",
+  "sidebar_filters_owner_email": "所有者电子邮件",
   "data_reclassify_session_preview_filtered_empty": "没有可预览的会话。自动会话已隐藏；使用筛选按钮可将其包含在内。",
   "data_batch_saving_progress": [
     {

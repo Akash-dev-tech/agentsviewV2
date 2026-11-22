@@ -81,6 +81,8 @@ type sessionFilterInput struct {
 	Project          string            `query:"project" doc:"Filter by project"`
 	ExcludeProject   string            `query:"exclude_project" doc:"Exclude a project"`
 	Machine          string            `query:"machine" doc:"Exact machine ID or alias, comma-separated IDs or aliases, or a unique whole display label (case-sensitive). Blank means all machines; unknown or ambiguous values return HTTP 400."`
+	OwnerName        string            `query:"owner_name" doc:"Filter by the name derived from an R2 owner's email local part"`
+	OwnerEmail       string            `query:"owner_email" doc:"Filter by the R2 owner email in the users/<email> object prefix"`
 	GitBranch        string            `query:"git_branch" doc:"Filter by git branch; opaque (project, branch) tokens from the /branches endpoint"`
 	Agent            string            `query:"agent" doc:"Filter by agent"`
 	Date             string            `query:"date" format:"date" doc:"Filter sessions active on this YYYY-MM-DD date"`
@@ -206,6 +208,8 @@ func (in *sessionFilterInput) listFilter() (service.ListFilter, error) {
 		Project:            in.Project,
 		ExcludeProject:     in.ExcludeProject,
 		Machine:            in.Machine,
+		OwnerName:          in.OwnerName,
+		OwnerEmail:         in.OwnerEmail,
 		GitBranch:          in.GitBranch,
 		Agent:              in.Agent,
 		Date:               in.Date,
@@ -270,6 +274,8 @@ func (in *sessionFilterInput) dbFilter(includeChildren bool) (db.SessionFilter, 
 		Project:            in.Project,
 		ExcludeProject:     in.ExcludeProject,
 		Machine:            in.Machine,
+		OwnerName:          in.OwnerName,
+		OwnerEmail:         in.OwnerEmail,
 		GitBranch:          in.GitBranch,
 		Agent:              in.Agent,
 		Date:               in.Date,

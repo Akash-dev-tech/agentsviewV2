@@ -214,6 +214,8 @@ class SessionsStore {
       project: f.project || undefined,
       exclude_project: exclude,
       machine: f.machine || undefined,
+      owner_name: f.ownerName || undefined,
+      owner_email: f.ownerEmail || undefined,
       agent: f.agent || undefined,
       termination: f.termination || undefined,
       date: f.date || undefined,
@@ -260,6 +262,7 @@ class SessionsStore {
 
   private hasDefaultSessionFilters(): boolean {
     return (
+      !this.hasSessionListOnlyFilters &&
       Object.keys(filtersToParams(this.filters)).length === 0 &&
       this.dateFiltersWindowDays === null &&
       !starred.filterOnly
@@ -1252,10 +1255,19 @@ class SessionsStore {
     void this.load();
   }
 
-  /** Label and pull request filters narrow only the session list; the
+  setOwnerFilter(field: "ownerName" | "ownerEmail", value: string) {
+    const next = value.trim();
+    if (next === (this.filters[field] ?? "")) return;
+    this.filters[field] = next || undefined;
+    this.setActiveSession(null);
+    void this.load();
+  }
+
+  /** Owner, label and pull request filters narrow only the session list; the
    *  usage and analytics pages do not apply them. */
   get hasSessionListOnlyFilters(): boolean {
-    return this.filters.labels.length > 0 || !!this.filters.pr;
+    const f = this.filters;
+    return f.labels.length > 0 || !!(f.pr || f.ownerName || f.ownerEmail);
   }
 
   get hasActiveFilters(): boolean {
@@ -1288,10 +1300,12 @@ class SessionsStore {
     if (options.clearDateYoke || hasDateFilters(this.filters)) {
       yokedDates.clear();
     }
-    const filters = { ...defaultFilters(), project };
+    const filters: Filters = { ...defaultFilters(), project };
     if (options.preserveLabelsAndPR) {
       filters.labels = this.filters.labels;
       filters.pr = this.filters.pr;
+      filters.ownerName = this.filters.ownerName;
+      filters.ownerEmail = this.filters.ownerEmail;
     }
     this.resetMachineResolution();
     this.filters = filters;

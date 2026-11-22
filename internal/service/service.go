@@ -454,6 +454,8 @@ type ListFilter struct {
 	Project            string `json:"project,omitempty"`
 	ExcludeProject     string `json:"exclude_project,omitempty"`
 	Machine            string `json:"machine,omitempty"`
+	OwnerName          string `json:"owner_name,omitempty"`
+	OwnerEmail         string `json:"owner_email,omitempty"`
 	GitBranch          string `json:"git_branch,omitempty"`
 	Agent              string `json:"agent,omitempty"`
 	Date               string `json:"date,omitempty"`

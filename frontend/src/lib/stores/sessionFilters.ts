@@ -12,6 +12,8 @@ import {
 export interface Filters {
   project: string;
   machine: string;
+  ownerName?: string;
+  ownerEmail?: string;
   agent: string;
   termination: string;
   date: string;
@@ -80,6 +82,8 @@ export function loadSavedFilters(): SavedFilters {
       const filters = { ...defaultFilters(), ...saved };
       filters.labels = normalizeLabelFilters(filters.labels);
       filters.pr = typeof filters.pr === "string" ? filters.pr.trim() : "";
+      filters.ownerName = typeof filters.ownerName === "string" ? filters.ownerName.trim() : undefined;
+      filters.ownerEmail = typeof filters.ownerEmail === "string" ? filters.ownerEmail.trim() : undefined;
       // Deliberately `!==`, not `<`: an entry written by a newer (or older)
       // format is not trusted either way — dropping date bounds is the
       // fail-safe direction in both.

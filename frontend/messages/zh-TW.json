@@ -1,4 +1,6 @@
 {
+  "sidebar_filters_owner_name": "擁有者姓名",
+  "sidebar_filters_owner_email": "擁有者電子郵件",
   "data_reclassify_session_preview_filtered_empty": "沒有可預覽的工作階段。自動工作階段已隱藏；使用篩選按鈕可將其包含在內。",
   "data_batch_saving_progress": [
     {

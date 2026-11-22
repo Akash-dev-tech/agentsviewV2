@@ -121,6 +121,12 @@ open the URL printed by the serve script. In the sidebar, open **Filters**
 and turn off **Hide single-turn** to see sessions with a single prompt.
 Clear any project or machine filters that exclude your R2 sessions.
 
+To filter by owner, store transcripts under `users/<email>/...` in the bucket
+and configure the provider roots beneath that prefix. In the session sidebar,
+open **Filters**, enter an **Owner name** or **Owner email**, and press Enter.
+The name filter reads the part of the email before `@` and treats dots,
+underscores, and hyphens as spaces. Both filters accept partial matches.
+
 ## Package a release
 
 Once the desired commit is on GitHub, open **Actions → Desktop Artifacts →
