@@ -95,30 +95,31 @@ syncing into a fresh database. Omit the flag on later runs.
 
 ## 5. Verify the sources
 
-While the dashboard runs, list sessions from a second terminal. Use your
-bucket name so the CLI can read the same TOML configuration.
+While the dashboard runs, list sessions from a second terminal. Replace the
+example address with the URL printed by the launcher.
 
 ```powershell
-$env:R2_BUCKET = 'your-r2-bucket'
-agentsview session list --no-sync
+./agentsview.exe --server http://127.0.0.1:8080 session list --include-one-shot
 ```
 
 ```bash
-R2_BUCKET=your-r2-bucket agentsview session list --no-sync
+./agentsview --server http://127.0.0.1:8080 session list --include-one-shot
 ```
+
+In Git Bash on Windows, use `./agentsview.exe` in the Bash command.
 
 For a complete source check, run this with the SQLite CLI and substitute
 your bucket name in the query.
 
 ```powershell
-sqlite3 -readonly "$env:USERPROFILE/.agentsview/sessions.db" "SELECT count(*) AS unexpected FROM sessions WHERE coalesce(file_path, '') NOT GLOB 's3://your-r2-bucket/*';"
+sqlite3 -readonly "$env:USERPROFILE/.agentsview/sessions.db" "SELECT count(*) AS total, count(CASE WHEN coalesce(file_path, '') NOT GLOB 's3://your-r2-bucket/*' THEN 1 END) AS unexpected FROM sessions;"
 ```
 
-In Git Bash, use `"$HOME/.agentsview/sessions.db"` for the path. The count must
-be `0`. Confirm that the session list also contains a known bucket transcript
-so an empty archive does not pass the check. In the browser, open the URL
-printed by the serve script, clear the session filters, and open that same
-transcript. Check that projects and machines match the configured prefixes.
+In Git Bash or macOS, use `"$HOME/.agentsview/sessions.db"` for the path.
+`total` should be positive and `unexpected` should be `0`. In the browser,
+open the URL printed by the serve script. In the sidebar, open **Filters**
+and turn off **Hide single-turn** to see sessions with a single prompt.
+Clear any project or machine filters that exclude your R2 sessions.
 
 ## Package a release
 
