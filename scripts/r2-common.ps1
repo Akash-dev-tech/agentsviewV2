@@ -38,7 +38,12 @@ if ($values['R2_BUCKET'] -cnotmatch '^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$') {
     throw 'Set R2_BUCKET to the bucket name.'
 }
 
-$binary = (Get-Command agentsview.exe -CommandType Application -ErrorAction Stop).Source
+$repoBinary = Join-Path $repo 'agentsview.exe'
+if (Test-Path -LiteralPath $repoBinary -PathType Leaf) {
+    $binary = $repoBinary
+} else {
+    $binary = (Get-Command agentsview.exe -CommandType Application -ErrorAction Stop).Source
+}
 $values['AGENTSVIEW_DATA_DIR'] = $dataDir
 $values['AGENTSVIEW_NO_DAEMON'] = '1'
 $values['AWS_S3_ENDPOINT'] = $values['AWS_ENDPOINT_URL']

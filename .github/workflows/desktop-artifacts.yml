@@ -8,6 +8,11 @@ env:
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      r2_cli:
+        description: Build Windows and macOS R2 command-line downloads
+        type: boolean
+        default: false
   # macOS builds live in desktop-macos-main.yml.
   push:
     branches: [main]
@@ -28,6 +33,7 @@ concurrency:
 # Timeout p99 measurements: https://github.com/kenn-io/agentsview/pull/2547
 jobs:
   frontend:
+    if: ${{ !inputs.r2_cli }}
     env:
       DOWNLOAD_RETRY: kit-retry 3 5
     runs-on: ubuntu-latest
@@ -102,3 +108,59 @@ jobs:
           target_triple: ${{ matrix.target_triple }}
           artifact_name: ${{ matrix.artifact_name }}
           artifact_dir: ${{ matrix.artifact_dir }}
+
+  r2-cli:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.r2_cli }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            target: windows-amd64
+          - runner: macos-26
+            target: darwin-arm64
+          - runner: macos-15-intel
+            target: darwin-amd64
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: "26.12.1"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: msys2/setup-msys2@v2.33.0
+        if: runner.os == 'Windows'
+        with:
+          msystem: UCRT64
+          path-type: inherit
+          install: make mingw-w64-ucrt-x86_64-gcc
+      - name: Build Windows executable
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          make SHELL=/usr/bin/bash build-release
+          mkdir -p dist/r2
+          cp agentsview dist/r2/agentsview.exe
+          dist/r2/agentsview.exe version
+      - name: Build macOS archive
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          make build-release
+          ./agentsview version
+          mkdir -p dist/r2
+          tar -czf "dist/r2/agentsview-r2-${{ matrix.target }}.tar.gz" agentsview
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: agentsview-r2-${{ matrix.target }}
+          path: dist/r2/*
+          if-no-files-found: error

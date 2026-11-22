@@ -26,6 +26,9 @@ Muse's hosted machine rather than your laptop.
 
 ## Install
 
+For this fork's Cloudflare R2 setup, start with [the R2 installation
+guide](INSTRUCTIONS.md).
+
 **macOS and Linux:**
 
 ```bash
