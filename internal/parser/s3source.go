@@ -50,7 +50,11 @@ var (
 // Returning an error here means an s3:// source simply yields nothing,
 // so a misconfigured store never aborts the local sync.
 func s3Client(ctx context.Context, bucket string) (*s3.Client, error) {
-	endpoint, secure, err := s3EndpointConfig(os.Getenv("AWS_S3_ENDPOINT"))
+	rawEndpoint := os.Getenv("AWS_S3_ENDPOINT")
+	if rawEndpoint == "" {
+		rawEndpoint = os.Getenv("AWS_ENDPOINT_URL")
+	}
+	endpoint, secure, err := s3EndpointConfig(rawEndpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -73,10 +77,15 @@ func s3Client(ctx context.Context, bucket string) (*s3.Client, error) {
 	if region == "" {
 		region = "us-east-1"
 	}
-	// Keep credentials explicit and leave checksum-mode defaults unset.
 	cl := s3.NewFromConfig(aws.Config{
 		Region: region, Credentials: s3Credentials(),
 	}, func(opts *s3.Options) {
+		if strings.EqualFold(os.Getenv("AWS_REQUEST_CHECKSUM_CALCULATION"), "when_required") {
+			opts.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+		}
+		if strings.EqualFold(os.Getenv("AWS_RESPONSE_CHECKSUM_VALIDATION"), "when_required") {
+			opts.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
+		}
 		// AWS, Google, and Aliyun use virtual-hosted buckets. Other custom
 		// stores keep path-style addressing.
 		if endpoint != "s3.amazonaws.com" {

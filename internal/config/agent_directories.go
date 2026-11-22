@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"go.kenn.io/agentsview/internal/parser"
@@ -64,10 +65,47 @@ func (c *Config) applyAgentDirectories(value any) error {
 			}
 			c.agentHomes[def.Type] = dedupeTrimmedStrings(entry.Homes)
 		}
-		if entry.Dirs != nil && c.agentDirSource[def.Type] != dirEnv {
+		if entry.Dirs != nil && (c.S3Only || c.agentDirSource[def.Type] != dirEnv) {
 			c.AgentDirs[def.Type] = entry.Dirs
 			c.agentDirSource[def.Type] = dirFile
 		}
+	}
+	return nil
+}
+
+func (c *Config) restrictToS3Sources() error {
+	if len(c.RemoteHosts) != 0 || len(c.ArchiveSources) != 0 {
+		return errors.New("s3_only: remove remote_hosts and archive_sources")
+	}
+	c.agentHomes = nil
+	c.sessionSourceConfigs = nil
+	found := false
+	for _, def := range parser.Registry {
+		var roots []string
+		if c.agentDirSource[def.Type] == dirFile && parser.AgentSupportsS3Discovery(def.Type) &&
+			!c.AgentDisabled(def.Type) {
+			for _, dir := range c.AgentDirs[def.Type] {
+				dir = strings.TrimSpace(dir)
+				if !strings.HasPrefix(dir, "s3://") {
+					continue
+				}
+				dir = strings.ReplaceAll(dir, "${R2_BUCKET}", os.Getenv("R2_BUCKET"))
+				bucket, prefix, _ := strings.Cut(strings.TrimPrefix(dir, "s3://"), "/")
+				if bucket == "" || prefix == "" {
+					return fmt.Errorf("s3_only: agents.%s.dirs requires a bucket and object prefix", def.Type)
+				}
+				roots = append(roots, dir)
+			}
+		}
+		c.AgentDirs[def.Type] = roots
+		if len(roots) != 0 {
+			found = true
+		} else if !c.AgentDisabled(def.Type) {
+			c.DisabledAgents = append(c.DisabledAgents, def.Type)
+		}
+	}
+	if !found {
+		return errors.New("s3_only: configure at least one supported S3 root in agents.<id>.dirs")
 	}
 	return nil
 }
@@ -240,6 +278,7 @@ func (c *Config) migrateAgentTables() error {
 // roots with those of src, leaving every other setting untouched. A running
 // daemon uses it to apply provider settings reloaded from disk.
 func (c *Config) AdoptSessionSources(src Config) {
+	c.S3Only = src.S3Only
 	c.DisabledAgents = slices.Clone(src.DisabledAgents)
 	c.AgentDirs = cloneAgentMap(src.AgentDirs, slices.Clone)
 	c.agentHomes = cloneAgentMap(src.agentHomes, slices.Clone)

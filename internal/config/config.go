@@ -1150,6 +1150,7 @@ type Config struct {
 	Proxy                ProxyConfig                 `json:"proxy,omitempty" toml:"proxy"`
 	WatchExcludePatterns []string                    `json:"watch_exclude_patterns,omitempty" toml:"watch_exclude_patterns"`
 	DisabledAgents       []parser.AgentType          `json:"disabled_agents,omitempty" toml:"disabled_agents"`
+	S3Only               bool                        `json:"-" toml:"s3_only"`
 	CursorSecret         string                      `json:"cursor_secret" toml:"cursor_secret"`
 	CursorAdminAPIKey    string                      `json:"cursor_admin_api_key,omitempty" toml:"cursor_admin_api_key"`
 	CursorAdminEmail     string                      `json:"cursor_admin_email,omitempty" toml:"cursor_admin_email"`
@@ -2031,6 +2032,7 @@ func (c *Config) applyConfigTOML(data string) error {
 		Proxy                          ProxyConfig            `toml:"proxy"`
 		WatchExcludePatterns           []string               `toml:"watch_exclude_patterns"`
 		DisabledAgents                 []string               `toml:"disabled_agents"`
+		S3Only                         bool                   `toml:"s3_only"`
 		SyncIncludeCwdPrefixes         []string               `toml:"sync_include_cwd_prefixes"`
 		ScanProtectedPaths             bool                   `toml:"scan_protected_paths"`
 		ResultContentBlockedCategories []string               `toml:"result_content_blocked_categories"`
@@ -2074,6 +2076,7 @@ func (c *Config) applyConfigTOML(data string) error {
 		}
 	}
 	c.ArchiveSources = file.ArchiveSources
+	c.S3Only = file.S3Only || os.Getenv("AGENTSVIEW_S3_ONLY") == "1"
 	if err := c.ValidateArchiveSources(); err != nil {
 		return err
 	}
@@ -2952,6 +2955,11 @@ func finalize(cfg *Config) error {
 	}
 	if strings.TrimSpace(cfg.LocalMachineName) == "" {
 		return errors.New("identify local sync machine: hostname is empty")
+	}
+	if cfg.S3Only || os.Getenv("AGENTSVIEW_S3_ONLY") == "1" {
+		if err := cfg.restrictToS3Sources(); err != nil {
+			return err
+		}
 	}
 	if err := cfg.resolveSessionSources(); err != nil {
 		return err

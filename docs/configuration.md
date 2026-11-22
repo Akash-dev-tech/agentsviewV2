@@ -1941,6 +1941,15 @@ with the existing per-agent parser, records the original `s3://` URI as
 `file_path`, and removes the temporary file. No persistent local mirror is
 created.
 
+Set the top-level `s3_only = true` to discover sessions exclusively from
+supported `s3://` entries in the per-agent `dirs` arrays. This mode ignores
+default roots, provider directory environment variables, alternate homes,
+and filesystem `session_sources`. It requires at least one enabled S3 root
+and rejects configurations with `remote_hosts` or `archive_sources`. It
+expands a literal `${R2_BUCKET}` in S3 roots from the environment.
+`AGENTSVIEW_S3_ONLY=1` enables the same mode for a process. The setting
+preserves existing archive rows.
+
 Codex forks and subagents also need their parent's rollouts to filter replayed
 turns. A sync downloads each parent once and shares it with every child it
 processes. If a parent's object changes during the sync, later children get
@@ -1957,12 +1966,18 @@ export AWS_REGION=us-east-1
 export AWS_S3_ENDPOINT=https://s3.amazonaws.com
 ```
 
-`AWS_S3_ENDPOINT` is optional for AWS S3. Set it for S3-compatible services such
+`AWS_S3_ENDPOINT` takes precedence over `AWS_ENDPOINT_URL`. Both are optional
+for AWS S3. Set one for S3-compatible services such
 as MinIO, Aliyun OSS, or Cloudflare R2. `http://` endpoints are accepted only
 for loopback hosts such as `localhost` or `127.0.0.1`. For a non-loopback HTTP
 endpoint, set `AGENTSVIEW_ALLOW_INSECURE_S3_ENDPOINT=true`; use that override
 only for trusted private networks because session transcripts travel without
 TLS.
+
+For Cloudflare R2, set `AWS_REGION=auto`. Set
+`AWS_REQUEST_CHECKSUM_CALCULATION=when_required` and
+`AWS_RESPONSE_CHECKSUM_VALIDATION=when_required` if the endpoint requires
+checksums only for operations that mandate them.
 
 Expected object layouts:
 

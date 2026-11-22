@@ -93,6 +93,30 @@ func TestS3TransportReadStat(t *testing.T) {
 	assert.NotEqual(t, obj.Fingerprint, changed.Fingerprint, "version alone must invalidate a same-size, same-mtime object")
 }
 
+func TestS3TransportR2Environment(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "/archive/remote/raw/codex/session.jsonl", r.URL.Path)
+		assert.Contains(t, r.Header.Get("Authorization"), "/auto/s3/aws4_request")
+		assert.Empty(t, r.Header.Get("X-Amz-Checksum-Mode"))
+		_, _ = io.WriteString(w, "transcript")
+	}))
+	defer server.Close()
+	t.Setenv("AWS_S3_ENDPOINT", "")
+	t.Setenv("AWS_ENDPOINT_URL", server.URL)
+	t.Setenv("AWS_REGION", "auto")
+	t.Setenv("AWS_ACCESS_KEY_ID", "fixture-id")
+	t.Setenv("AWS_SECRET_ACCESS_KEY", "fixture-key")
+	t.Setenv("AWS_RESPONSE_CHECKSUM_VALIDATION", "when_required")
+
+	reader, err := FetchS3Object("s3://archive/remote/raw/codex/session.jsonl")
+	require.NoError(t, err)
+	defer reader.Close()
+	data, err := io.ReadAll(reader)
+	require.NoError(t, err)
+	assert.Equal(t, "transcript", string(data))
+}
+
 func TestS3TransportRejectsIncompleteListing(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = io.WriteString(w, `<ListBucketResult><IsTruncated>true</IsTruncated><Contents><Key>prefix/session.jsonl</Key><Size>3</Size></Contents></ListBucketResult>`)

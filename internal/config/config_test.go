@@ -1250,6 +1250,39 @@ machine = "archivebox"
 		cfg.SourceMachines[parser.AgentCopilot][absoluteTestPath(t, "/sessions/from-archive")])
 }
 
+func TestS3OnlyUsesConfiguredObjectRoots(t *testing.T) {
+	f := newConfigFixture(t)
+	t.Setenv("CODEX_SESSIONS_DIR", f.Path("env-codex"))
+	t.Setenv("R2_BUCKET", "test-archive")
+	f.WriteConfigText(t, `
+s3_only = true
+[agents.codex]
+dirs = ["local-codex", "s3://${R2_BUCKET}/remote/raw/codex"]
+homes = ["alternate-codex-home"]
+[[session_sources]]
+agent = "claude"
+dir = "local-claude"
+`)
+
+	cfg := f.LoadMinimal(t)
+	assert.Equal(t, []string{"s3://test-archive/remote/raw/codex"}, cfg.ResolveDirs(parser.AgentCodex))
+	assert.Empty(t, cfg.SessionSources)
+	assert.Empty(t, cfg.ProviderMetadata[parser.AgentCodex])
+	assert.False(t, cfg.AgentDisabled(parser.AgentCodex))
+	assert.True(t, cfg.AgentDisabled(parser.AgentClaude))
+	assert.True(t, cfg.AgentDisabled(parser.AgentCursor))
+	assert.True(t, cfg.AgentDisabled(parser.AgentCodexCloud))
+}
+
+func TestS3OnlyRequiresAnObjectRoot(t *testing.T) {
+	f := newConfigFixture(t)
+	t.Setenv("AGENTSVIEW_S3_ONLY", "1")
+	f.WriteConfigText(t, `[agents.codex]
+dirs = ["local-codex"]
+`)
+	require.ErrorContains(t, f.LoadMinimalErr(t), "configure at least one supported S3 root")
+}
+
 func TestLoadFileSessionSourcesPreserveLegacyS3Roots(t *testing.T) {
 	cfg := loadMinimalWithConfig(t, map[string]any{
 		"claude_project_dirs": []string{"s3://session-archive/claude"},
