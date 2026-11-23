@@ -135,6 +135,15 @@ discovered exact URLs, releases, and queries in the provider entry. If a
 repository or document disappears, retain its original URL and commit hash and
 add an archived or maintained mirror without replacing the original identity.
 
+## Cloudflare R2 snapshot transport
+
+The uploader's key contract nests a single Claude or Codex JSONL file under
+`users/<user_id>/devices/<device_id>/<agent>/snapshots/<snapshot_id>/p/<path_hash>/`.
+Snapshot IDs use either a SHA-256 digest or an upload UUID. The provider
+transcript format is unchanged. Synthetic R2 listings cover both snapshot
+forms, last-modified selection across uploads, and user prefix scoping in
+`internal/parser/r2_snapshot_test.go`.
+
 ## Tool Sequence Evidence
 
 The sequence extractor uses provider failure statuses and the empty-result

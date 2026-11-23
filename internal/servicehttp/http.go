@@ -344,6 +344,11 @@ func (b *httpBackend) requireAPIVersion(ctx context.Context, minVersion int, fea
 func (b *httpBackend) List(
 	ctx context.Context, f service.ListFilter,
 ) (*service.SessionList, error) {
+	if f.R2UserID != "" {
+		if err := b.requireAPIVersion(ctx, service.R2TeammateAPIVersion, "R2 teammate filters"); err != nil {
+			return nil, err
+		}
+	}
 	if len(f.Labels) > 0 || f.PR != "" {
 		if err := b.requireAPIVersion(ctx, service.SessionAnnotationsAPIVersion, "session labels, parent links, or their filters"); err != nil {
 			return nil, err
@@ -398,6 +403,9 @@ func filterToQuery(f service.ListFilter) (*apiclient.GetAPIV1SessionsQuery, erro
 	}
 	if f.Machine != "" {
 		q.Machine = new(f.Machine)
+	}
+	if f.R2UserID != "" {
+		q.R2UserID = new(f.R2UserID)
 	}
 	if f.GitBranch != "" {
 		q.GitBranch = new(f.GitBranch)

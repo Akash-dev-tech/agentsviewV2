@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "Integrante del equipo",
+  "sidebar_r2_all_users": "Todos los usuarios",
+  "sidebar_r2_search_users": "Buscar por nombre o correo",
+  "sidebar_r2_no_users": "No hay integrantes que coincidan",
+  "sidebar_r2_refresh_users": "Actualizar integrantes",
   "sidebar_filters_owner_name": "Nombre del propietario",
   "sidebar_filters_owner_email": "Correo del propietario",
   "data_reclassify_session_preview_filtered_empty": "No hay sesiones para previsualizar. Las sesiones automatizadas están ocultas; usa el botón de filtro para incluirlas.",

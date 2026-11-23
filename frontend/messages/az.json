@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "Komanda üzvü",
+  "sidebar_r2_all_users": "Bütün istifadəçilər",
+  "sidebar_r2_search_users": "Ad və ya e-poçtla axtar",
+  "sidebar_r2_no_users": "Uyğun komanda üzvü yoxdur",
+  "sidebar_r2_refresh_users": "Komanda siyahısını yenilə",
   "sidebar_filters_owner_name": "Sahibin adı",
   "sidebar_filters_owner_email": "Sahibin e-poçtu",
   "data_reclassify_session_preview_filtered_empty": "Önbaxış üçün sessiya yoxdur. Avtomatlaşdırılmış sessiyalar gizlədilib; onları daxil etmək üçün süzgəc düyməsindən istifadə edin.",

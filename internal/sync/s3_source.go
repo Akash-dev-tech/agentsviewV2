@@ -94,7 +94,10 @@ func s3DiscoveredSessionIDWithProvider(
 	if id == "" {
 		return ""
 	}
-	return applyIDPrefixToID(s3SessionIDPrefix(file.Machine), id)
+	if key, ok := parser.R2SnapshotFromURI(file.Path); ok {
+		id = key.SessionID()
+	}
+	return applyIDPrefixToID(s3FileIDPrefix(file), id)
 }
 
 func (e *Engine) s3SourceMetadataChanged(ctx context.Context, file parser.DiscoveredFile) bool {
@@ -296,7 +299,7 @@ func (e *Engine) s3CodexStoredNameDiffers(
 	ctx context.Context, file parser.DiscoveredFile, uuid, indexTitle string,
 ) bool {
 	sessionID := applyIDPrefixToID(
-		s3SessionIDPrefix(file.Machine), "codex:"+uuid,
+		s3FileIDPrefix(file), "codex:"+uuid,
 	)
 	return e.codexStoredNameDiffersBySessionID(
 		ctx, sessionID, indexTitle, false,
@@ -376,6 +379,10 @@ func (e *Engine) hydrateS3DiscoveredFile(
 	if !isS3SourcePath(file.Path) {
 		return
 	}
+	key, snapshot := parser.R2SnapshotFromURI(file.Path)
+	if snapshot {
+		file.Machine = key.DeviceID
+	}
 	if sess, _ := e.db.GetSession(ctx, sessionID); sess != nil {
 		if sess.Project != "" &&
 			!parser.NeedsProjectReparse(sess.Project) {
@@ -393,7 +400,7 @@ func (e *Engine) hydrateS3DiscoveredFile(
 		if file.Machine == "" {
 			file.Machine = s3MachineFromRoot(root)
 		}
-		if file.Project == "" {
+		if file.Project == "" && !snapshot {
 			if p, ok := s3ProviderFor(file.Agent); ok {
 				scan := p.S3Scanner()
 				if scan.Project != nil && strings.Contains(rel, "/") {

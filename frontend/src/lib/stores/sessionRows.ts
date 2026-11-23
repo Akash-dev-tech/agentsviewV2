@@ -34,6 +34,7 @@ export function indexFields(row: SessionGroupInput) {
     project: row.project,
     project_assigned: row.project_assigned ?? false,
     machine: row.machine,
+    r2_teammate: row.r2_teammate,
     source_machines: row.source_machines,
     agent: row.agent,
     agent_label: row.agent_label ?? undefined,
@@ -55,11 +56,22 @@ export function indexFields(row: SessionGroupInput) {
 }
 
 export function sameSessionFields(a: Session, b: Session): boolean {
+  const first = a.r2_teammate;
+  const second = b.r2_teammate;
+  if (
+    first?.user_id !== second?.user_id ||
+    first?.name !== second?.name ||
+    first?.email !== second?.email ||
+    first?.machine !== second?.machine
+  )
+    return false;
   for (const key in a) {
+    if (key === "r2_teammate") continue;
     if (Object.hasOwn(a, key) && !sameField(a[key as keyof Session], b[key as keyof Session]))
       return false;
   }
   for (const key in b) {
+    if (key === "r2_teammate") continue;
     if (
       Object.hasOwn(b, key) &&
       !Object.prototype.propertyIsEnumerable.call(a, key) &&

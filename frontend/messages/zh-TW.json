@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "團隊成員",
+  "sidebar_r2_all_users": "所有使用者",
+  "sidebar_r2_search_users": "依姓名或電子郵件搜尋",
+  "sidebar_r2_no_users": "沒有相符的團隊成員",
+  "sidebar_r2_refresh_users": "重新整理團隊成員",
   "sidebar_filters_owner_name": "擁有者姓名",
   "sidebar_filters_owner_email": "擁有者電子郵件",
   "data_reclassify_session_preview_filtered_empty": "沒有可預覽的工作階段。自動工作階段已隱藏；使用篩選按鈕可將其包含在內。",

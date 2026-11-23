@@ -330,6 +330,14 @@ func (s *Session) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// R2Teammate is the directory identity attached when serving an R2 session.
+type R2Teammate struct {
+	UserID  string `json:"user_id"`
+	Name    string `json:"name,omitempty"`
+	Email   string `json:"email,omitempty"`
+	Machine string `json:"machine"`
+}
+
 // Session represents a row in the sessions table.
 //
 //nolint:recvcheck // Value encoding and pointer decoding intentionally implement distinct interfaces.
@@ -339,6 +347,8 @@ type Session struct {
 	ID      string `json:"id"`
 	Project string `json:"project"`
 	Machine string `json:"machine"`
+
+	R2Teammate *R2Teammate `json:"r2_teammate,omitempty"`
 	// SourceMachines lists contributing hosted device identities, derived on read.
 	SourceMachines        []string `json:"source_machines,omitempty" doc:"Contributing hosted device machine IDs; omitted for sessions without hosted provenance."`
 	Agent                 string   `json:"agent"`
@@ -589,6 +599,7 @@ type SessionFilter struct {
 	Machine        string
 	OwnerName      string // substring of the R2 owner's email local part as words
 	OwnerEmail     string // substring of the R2 owner's email
+	R2UserID       string // exact user ID in an R2 snapshot path
 	// GitBranch is a branchListSep-joined list of opaque (project, branch) tokens (EncodeBranchFilterToken).
 	GitBranch string
 	// GitBranchExact matches one raw branch name in any project. It is ANDed
@@ -735,6 +746,8 @@ type SidebarSessionIndexRow struct {
 	TranscriptRevision *string  `json:"transcript_revision,omitempty"`
 	IsAutomated        bool     `json:"is_automated"`
 	IsTeammate         bool     `json:"is_teammate"`
+
+	R2Teammate *R2Teammate `json:"r2_teammate,omitempty"`
 }
 
 type SidebarSessionIndex struct {

@@ -342,6 +342,7 @@ func listFilterToDB(f ListFilter) db.SessionFilter {
 		Machine:              f.Machine,
 		OwnerName:            f.OwnerName,
 		OwnerEmail:           f.OwnerEmail,
+		R2UserID:             f.R2UserID,
 		GitBranch:            f.GitBranch,
 		Agent:                f.Agent,
 		Date:                 f.Date,

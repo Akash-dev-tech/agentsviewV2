@@ -22,6 +22,13 @@ func s3SessionIDPrefix(machine string) string {
 	return machine + "~"
 }
 
+func s3FileIDPrefix(file parser.DiscoveredFile) string {
+	if key, ok := parser.R2SnapshotFromURI(file.Path); ok {
+		return s3SessionIDPrefix(key.Namespace())
+	}
+	return s3SessionIDPrefix(file.Machine)
+}
+
 func applyIDPrefixToID(prefix, id string) string {
 	if prefix == "" || id == "" || strings.HasPrefix(id, prefix) {
 		return id
@@ -198,9 +205,24 @@ func (e *Engine) processS3Session(
 	ctx context.Context, file parser.DiscoveredFile, sourceInfo os.FileInfo,
 	p parser.S3Provider,
 ) processResult {
-	idPrefix := s3SessionIDPrefix(file.Machine)
+	idPrefix := s3FileIDPrefix(file)
+	snapshot, isSnapshot := parser.R2SnapshotFromURI(file.Path)
+	nativeID := p.S3SessionID(file.Path)
+	archiveID := func(id string) string {
+		if isSnapshot && id == nativeID {
+			id = snapshot.SessionID()
+		}
+		return id
+	}
 	sourceFingerprint := s3SourceFingerprint(file)
 	storedID, lookupErr := e.s3StoredSessionID(ctx, file, p)
+	if isSnapshot && storedID != "" {
+		_, mtime, found := e.db.GetSessionFileInfo(ctx, storedID)
+		if found && (mtime > sourceInfo.ModTime().UnixNano() ||
+			(mtime == sourceInfo.ModTime().UnixNano() && e.db.GetSessionFilePath(ctx, storedID) < file.Path)) {
+			return processResult{skip: true}
+		}
+	}
 	sourceChanged := lookupErr != nil || storedID == "" || e.s3SourceMetadataChangedFromInfo(ctx,
 		file, storedID,
 		sourceInfo.Size(),
@@ -209,7 +231,7 @@ func (e *Engine) processS3Session(
 	)
 	switch file.Agent {
 	case parser.AgentClaude:
-		sessionID := strings.TrimSuffix(sourceInfo.Name(), ".jsonl")
+		sessionID := archiveID(strings.TrimSuffix(sourceInfo.Name(), ".jsonl"))
 		fullID := applyIDPrefixToID(idPrefix, sessionID)
 		primaryPath := e.db.GetSessionFilePathNotSourceMissing(ctx, fullID)
 		if primaryPath == "" && !e.forceParse {
@@ -254,7 +276,7 @@ func (e *Engine) processS3Session(
 		if uuid := parser.CodexSessionUUIDFromFilename(
 			path.Base(file.Path),
 		); uuid != "" {
-			sessionID := "codex:" + uuid
+			sessionID := archiveID("codex:" + uuid)
 			fullID := applyIDPrefixToID(idPrefix, sessionID)
 			if e.shouldSkipFileWithPrefix(ctx,
 				idPrefix, sessionID, sourceInfo, sourceFingerprint,
@@ -312,7 +334,12 @@ func (e *Engine) processS3Session(
 	if err != nil {
 		return processResult{err: err}
 	}
-	rc, err := fetchS3Object(file.Path)
+	var rc io.ReadCloser
+	if isSnapshot {
+		rc, err = parser.FetchS3ObjectContext(ctx, file.Path)
+	} else {
+		rc, err = fetchS3Object(file.Path)
+	}
 	if err != nil {
 		return processResult{err: err, noCacheSkip: true, retentionLease: lease}
 	}
@@ -399,6 +426,7 @@ func (e *Engine) processS3Session(
 	}
 	// Persist object metadata instead of transient materialization metadata.
 	for i := range res.results {
+		res.results[i].Session.ID = archiveID(res.results[i].Session.ID)
 		applyIDPrefixToParsedResult(idPrefix, &res.results[i])
 		res.results[i].Session.File.Size = sourceInfo.Size()
 		res.results[i].Session.File.Mtime = sourceInfo.ModTime().UnixNano()
@@ -409,12 +437,15 @@ func (e *Engine) processS3Session(
 	if len(res.retrySessionIDs) > 0 && idPrefix != "" {
 		prefixed := make(map[string]bool, len(res.retrySessionIDs))
 		for id := range res.retrySessionIDs {
-			prefixed[applyIDPrefixToID(idPrefix, id)] = true
+			prefixed[applyIDPrefixToID(idPrefix, archiveID(id))] = true
 		}
 		res.retrySessionIDs = prefixed
 	}
 	if sourceChanged || hydratedToolResults || sawPersistedToolResults {
 		res.forceReplace = true
+	}
+	for i, id := range res.excludedSessionIDs {
+		res.excludedSessionIDs[i] = archiveID(id)
 	}
 	res.excludedSessionIDs = applyIDPrefixToIDs(
 		idPrefix, res.excludedSessionIDs,
@@ -518,7 +549,7 @@ func (e *Engine) parseMaterializedS3Source(
 		}
 		staged.staged.toolResultImages = e.toolResultImages
 		staged.staged.database = e.db
-		staged.staged.idPrefix = s3SessionIDPrefix(file.Machine)
+		staged.staged.idPrefix = s3FileIDPrefix(file)
 		if !strings.HasPrefix(staged.staged.idPrefix, e.idPrefix) {
 			staged.staged.idPrefix = e.idPrefix + staged.staged.idPrefix
 		}
@@ -583,7 +614,7 @@ func (e *Engine) parseMaterializedS3Source(
 		res.results[i].Session.File.Path = file.Path
 	}
 	if collisionPolicyApplies(provider) {
-		e.applyProviderFilePathPolicies(ctx, provider, file.Agent, file.Path, &res, s3SessionIDPrefix(file.Machine))
+		e.applyProviderFilePathPolicies(ctx, provider, file.Agent, file.Path, &res, s3FileIDPrefix(file))
 	}
 	res.staged, res.stagedGCRelease = staged.staged, staged.stagedGCRelease
 	staged.staged, staged.stagedGCRelease = nil, nil

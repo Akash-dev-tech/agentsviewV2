@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "Membre de l’équipe",
+  "sidebar_r2_all_users": "Tous les utilisateurs",
+  "sidebar_r2_search_users": "Rechercher par nom ou e-mail",
+  "sidebar_r2_no_users": "Aucun membre correspondant",
+  "sidebar_r2_refresh_users": "Actualiser les membres",
   "sidebar_filters_owner_name": "Nom du propriétaire",
   "sidebar_filters_owner_email": "E-mail du propriétaire",
   "data_reclassify_session_preview_filtered_empty": "Aucune session à prévisualiser. Les sessions automatisées sont masquées ; utilisez le bouton de filtre pour les inclure.",

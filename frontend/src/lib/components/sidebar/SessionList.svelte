@@ -5,6 +5,7 @@
   import { ui } from "../../stores/ui.svelte.js";
   import { starred } from "../../stores/starred.svelte.js";
   import SessionItem from "./SessionItem.svelte";
+  import R2TeammateFilter from "./R2TeammateFilter.svelte";
   import SessionFilterControl from "../filters/SessionFilterControl.svelte";
   import SidebarToggleButton from "../layout/SidebarToggleButton.svelte";
   import {
@@ -485,6 +486,8 @@
     {/snippet}
   </div>
 </div>
+
+<R2TeammateFilter />
 
 {#if sessions.sidebarLoadError}
   <LoadError

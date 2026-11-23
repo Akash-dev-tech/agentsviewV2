@@ -54,6 +54,9 @@ func dedupeDiscoveredFilesByPreference(
 }
 
 func discoveredFileKey(file parser.DiscoveredFile) string {
+	if key, ok := parser.R2SnapshotFromURI(file.Path); ok {
+		return string(file.Agent) + "\x00" + key.Namespace()
+	}
 	if isCodexFormatAgent(file.Agent) {
 		if id := parser.CodexSessionUUIDFromFilename(filepath.Base(file.Path)); id != "" {
 			return string(file.Agent) + "\x00" +
@@ -65,7 +68,7 @@ func discoveredFileKey(file parser.DiscoveredFile) string {
 
 func discoveredFileIDPrefix(file parser.DiscoveredFile) string {
 	if isS3SourcePath(file.Path) {
-		return s3SessionIDPrefix(file.Machine)
+		return s3FileIDPrefix(file)
 	}
 	return ""
 }
@@ -73,6 +76,10 @@ func discoveredFileIDPrefix(file parser.DiscoveredFile) string {
 func preferDiscoveredFile(
 	candidate, current parser.DiscoveredFile,
 ) bool {
+	if _, ok := parser.R2SnapshotFromURI(candidate.Path); ok {
+		return candidate.SourceMtime > current.SourceMtime ||
+			(candidate.SourceMtime == current.SourceMtime && candidate.Path < current.Path)
+	}
 	if candidate.Agent == current.Agent && isCodexFormatAgent(candidate.Agent) {
 		// Keep import ranking consistent with parser.preferCodexSource.
 		// Across roots this is a selection policy, not evidence of freshness.

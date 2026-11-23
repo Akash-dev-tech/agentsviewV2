@@ -442,6 +442,9 @@ const SessionAnnotationsAPIVersion = 11
 // lists by updated_since and created_since; older daemons ignore them.
 const RecallTimeBoundsAPIVersion = 21
 
+// R2TeammateAPIVersion is the first daemon API with R2 user ID filtering.
+const R2TeammateAPIVersion = 29
+
 // ListFilter mirrors the HTTP query parameters in handleListSessions.
 // Field names map to HTTP query param names via json tags.
 type ListFilter struct {
@@ -456,6 +459,7 @@ type ListFilter struct {
 	Machine            string `json:"machine,omitempty"`
 	OwnerName          string `json:"owner_name,omitempty"`
 	OwnerEmail         string `json:"owner_email,omitempty"`
+	R2UserID           string `json:"r2_user_id,omitempty"`
 	GitBranch          string `json:"git_branch,omitempty"`
 	Agent              string `json:"agent,omitempty"`
 	Date               string `json:"date,omitempty"`

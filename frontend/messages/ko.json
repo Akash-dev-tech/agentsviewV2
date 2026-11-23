@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "팀원",
+  "sidebar_r2_all_users": "모든 사용자",
+  "sidebar_r2_search_users": "이름 또는 이메일로 검색",
+  "sidebar_r2_no_users": "일치하는 팀원 없음",
+  "sidebar_r2_refresh_users": "팀원 목록 새로 고침",
   "sidebar_filters_owner_name": "소유자 이름",
   "sidebar_filters_owner_email": "소유자 이메일",
   "data_reclassify_session_preview_filtered_empty": "미리 볼 세션이 없습니다. 자동 세션은 숨겨져 있습니다. 포함하려면 필터 버튼을 사용하세요.",

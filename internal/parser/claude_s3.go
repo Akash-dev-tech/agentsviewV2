@@ -61,6 +61,9 @@ func foldClaudeS3SidecarMetadata(
 }
 
 func claudeS3SidecarRoots(uri string) []string {
+	if _, snapshot := R2SnapshotFromURI(uri); snapshot {
+		return nil
+	}
 	sessionPath := strings.TrimSuffix(uri, ".jsonl")
 	if sessionPath == "" || sessionPath == uri {
 		return nil

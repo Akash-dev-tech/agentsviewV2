@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "团队成员",
+  "sidebar_r2_all_users": "所有用户",
+  "sidebar_r2_search_users": "按姓名或电子邮件搜索",
+  "sidebar_r2_no_users": "没有匹配的团队成员",
+  "sidebar_r2_refresh_users": "刷新团队成员",
   "sidebar_filters_owner_name": "所有者姓名",
   "sidebar_filters_owner_email": "所有者电子邮件",
   "data_reclassify_session_preview_filtered_empty": "没有可预览的会话。自动会话已隐藏；使用筛选按钮可将其包含在内。",

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { teammateLabel } from "../../utils/teammates.js";
   import DocbankStatus from "../content/DocbankStatus.svelte";
   import {
     ChartColumnIcon,
@@ -430,6 +431,10 @@
           >{m.session_breadcrumb_antigravity_decode_confidence_low()}</span>
         {/if}
       </span>
+      {#if session.r2_teammate}
+        {@const teammate = `${teammateLabel(session.r2_teammate)} · ${session.r2_teammate.machine}`}
+        <span class="meta-group"><span class="teammate-label" title={teammate}>{teammate}</span></span>
+      {/if}
       {#if session.started_at}
         <span class="meta-group meta-time">
           <span class="session-time">
@@ -595,6 +600,10 @@
 
   .meta-identity {
     flex-shrink: 1;
+  }
+
+  .teammate-label {
+    overflow-wrap: anywhere;
   }
 
   .meta-identity .agent-badge {

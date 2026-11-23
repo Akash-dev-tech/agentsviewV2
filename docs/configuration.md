@@ -2003,6 +2003,32 @@ data is stale.
 S3 roots are not watched with fsnotify. They are picked up by initial sync,
 manual sync, and the periodic directory scan.
 
+#### Cloudflare R2 teammate snapshots
+
+For immutable Claude and Codex uploads, set each enabled agent's `dirs` to
+`["s3://<bucket>/users"]`. AgentsView recognizes objects under:
+
+```text
+users/<user_id>/devices/<device_id>/<agent>/snapshots/<snapshot_id>/p/<path_hash>/<filename>.jsonl
+```
+
+AgentsView imports the object with the most recent R2 modification time for
+each user, device, agent, and path hash. The previous snapshot stays in the
+bucket. Legacy S3 roots and email filters continue to work.
+
+Set `AV_WORKER_URL` and `AV_ADMIN_SECRET` in the AgentsView server's environment
+to show teammate names, emails, and machine names. The Worker URL must use
+HTTPS. The server caches the directory for five minutes. Use **Refresh
+teammates** to request a new copy, with a one minute cooldown between manual
+refreshes.
+If a user is missing from the directory, AgentsView shows the user ID.
+
+In Sessions, search the **Teammate** dropdown by name or email. Selecting a
+teammate imports their current snapshots using only their `users/<user_id>/`
+prefix and filters the archive to that user. On a read-only replica the filter
+uses the sessions already copied to that replica. **All users** clears the
+teammate selection.
+
 ### Worktree Project Mappings
 
 The parser infers a session's project from its `cwd`. It recognizes common

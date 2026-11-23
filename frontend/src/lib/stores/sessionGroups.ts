@@ -1,4 +1,5 @@
 import { getSessionStatus, recencyKey } from "./sessionStatus.svelte.js";
+import type { DbR2Teammate } from "../api/generated/index.js";
 
 export interface SessionGroupInput {
   id: string;
@@ -8,6 +9,7 @@ export interface SessionGroupInput {
   project: string;
   project_assigned?: boolean;
   machine: string;
+  r2_teammate?: DbR2Teammate;
   source_machines?: string[];
   agent: string;
   agent_label?: string | null;

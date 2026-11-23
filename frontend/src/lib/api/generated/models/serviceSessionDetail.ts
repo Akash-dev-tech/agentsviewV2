@@ -4,6 +4,7 @@
 import type { DbCaptureCoverageView } from "./dbCaptureCoverageView.ts";
 import type { DbPlanUsageView } from "./dbPlanUsageView.ts";
 import type { DbQualitySignals } from "./dbQualitySignals.ts";
+import type { DbR2Teammate } from "./dbR2Teammate.ts";
 import type { ParserPRLink } from "./parserPRLink.ts";
 import type { ServiceSessionDetailHealthPenalties } from "./serviceSessionDetailHealthPenalties.ts";
 
@@ -60,6 +61,7 @@ export interface ServiceSessionDetail {
   project: string;
   project_assigned?: boolean;
   quality_signals?: DbQualitySignals;
+  r2_teammate?: DbR2Teammate;
   relationship_type?: string;
   secret_leak_count: number;
   session_kind?: string;

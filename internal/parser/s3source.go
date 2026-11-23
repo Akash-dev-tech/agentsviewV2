@@ -213,8 +213,12 @@ func parseS3URI(uri string) (bucket, key string) {
 // listS3 lists every object under an s3://bucket/prefix, returning each
 // object's full s3:// URI plus source metadata.
 func listS3(uri string) ([]S3Object, error) {
+	return listS3Context(context.Background(), uri)
+}
+
+func listS3Context(ctx context.Context, uri string) ([]S3Object, error) {
 	bucket, prefix := parseS3URI(uri)
-	cl, err := s3Client(context.Background(), bucket)
+	cl, err := s3Client(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +230,7 @@ func listS3(uri string) ([]S3Object, error) {
 		Bucket: new(bucket), Prefix: new(prefix), EncodingType: types.EncodingTypeUrl,
 	})
 	for pages.HasMorePages() {
-		page, err := pages.NextPage(context.Background())
+		page, err := pages.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -261,12 +265,17 @@ func FetchS3Object(uri string) (io.ReadCloser, error) {
 }
 
 func fetchS3ObjectDefault(uri string) (io.ReadCloser, error) {
+	return FetchS3ObjectContext(context.Background(), uri)
+}
+
+// FetchS3ObjectContext streams an S3 object for the lifetime of ctx.
+func FetchS3ObjectContext(ctx context.Context, uri string) (io.ReadCloser, error) {
 	bucket, key := parseS3URI(uri)
-	cl, err := s3Client(context.Background(), bucket)
+	cl, err := s3Client(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
-	obj, err := cl.GetObject(context.Background(), &s3.GetObjectInput{
+	obj, err := cl.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: new(bucket), Key: new(key),
 	})
 	if err != nil {
@@ -466,10 +475,35 @@ func s3PrefixScan(root string, scan S3SessionScanner) []DiscoveredFile {
 	}
 	machine := s3MachineFromRoot(root, string(scan.Agent))
 	var out []DiscoveredFile
+	for _, obj := range latestR2Snapshots(objects) {
+		if _, within := s3RelativePath(root, obj.URI); !within {
+			continue
+		}
+		if file, ok := R2SnapshotFile(obj); ok && file.Agent == scan.Agent {
+			out = append(out, file)
+		}
+	}
 	for _, obj := range objects {
+		_, key := parseS3URI(obj.URI)
+		if parts := strings.SplitN(key, "/", 4); len(parts) == 4 &&
+			parts[0] == "users" && ValidR2UserID(parts[1]) && parts[2] == "devices" {
+			continue
+		}
 		rel, ok := s3RelativePath(root, obj.URI)
 		if !ok {
 			continue
+		}
+		// Legacy teammate exports also exist under users/<email>/<host>/<agent>/.
+		// Strip that prefix when discovering through a shared users root.
+		_, rootKey := parseS3URI(root)
+		if rootKey == "" || strings.TrimSuffix(rootKey, "/") == "users" {
+			parts := strings.SplitN(key, "/", 5)
+			if len(parts) == 5 && parts[0] == "users" && strings.Contains(parts[1], "@") {
+				if parts[3] != string(scan.Agent) {
+					continue
+				}
+				rel = parts[4]
+			}
 		}
 		segs := strings.Split(rel, "/")
 		if !scan.Keep(rel, segs) {

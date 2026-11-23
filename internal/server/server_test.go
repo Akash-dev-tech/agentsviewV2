@@ -1734,6 +1734,44 @@ func TestSessionOwnerFilters(t *testing.T) {
 	assert.ElementsMatch(t, []string{"name-match", "same-name"}, []string{first.Sessions[0].ID, second.Sessions[0].ID})
 }
 
+func TestR2TeammateSessionFilter(t *testing.T) {
+	t.Setenv("AV_WORKER_URL", "")
+	te := setup(t)
+	const user = "usr_11111111-1111-4111-8111-111111111111"
+	const otherUser = "usr_22222222-2222-4222-8222-222222222222"
+	const device = "dev_33333333-3333-4333-8333-333333333333"
+	const upload = "upload-44444444-4444-4444-8444-444444444444"
+	hash := strings.Repeat("a", 64)
+	id := "r2." + user + "." + device + "." + hash + "~codex:example"
+	otherID := strings.Replace(id, user, otherUser, 1)
+	seed := func(id, owner string) {
+		te.seedSession(t, id, "demo", 3, func(s *db.Session) {
+			s.FilePath = new("s3://example/users/" + owner + "/devices/" + device + "/codex/snapshots/" + upload + "/p/" + hash + "/rollout.jsonl")
+		})
+	}
+	seed(id, user)
+	seed(otherID, otherUser)
+	te.seedSession(t, "legacy", "demo", 3, func(s *db.Session) {
+		s.FilePath = new("s3://example/users/sam@example.net/laptop/codex/rollout.jsonl")
+	})
+
+	for _, endpoint := range []string{"/api/v1/sessions", "/api/v1/sessions/sidebar-index"} {
+		w := te.get(t, endpoint+"?r2_user_id="+user)
+		assertStatus(t, w, http.StatusOK)
+		result := decode[struct {
+			Sessions []db.SidebarSessionIndexRow `json:"sessions"`
+		}](t, w)
+		require.Len(t, result.Sessions, 1)
+		assert.Equal(t, id, result.Sessions[0].ID)
+		require.NotNil(t, result.Sessions[0].R2Teammate)
+		assert.Equal(t, user, result.Sessions[0].R2Teammate.UserID)
+		assert.Equal(t, device, result.Sessions[0].R2Teammate.Machine)
+		w = te.get(t, endpoint)
+		assertStatus(t, w, http.StatusOK)
+		assert.Len(t, decode[sessionListResponse](t, w).Sessions, 3)
+	}
+}
+
 func TestListSessions_ExcludeOneShotDefault(t *testing.T) {
 	te := setup(t)
 	te.seedSession(t, "s1", "my-app", 5, func(s *db.Session) {

@@ -216,6 +216,7 @@ class SessionsStore {
       machine: f.machine || undefined,
       owner_name: f.ownerName || undefined,
       owner_email: f.ownerEmail || undefined,
+      r2_user_id: f.r2UserID || undefined,
       agent: f.agent || undefined,
       termination: f.termination || undefined,
       date: f.date || undefined,
@@ -299,6 +300,7 @@ class SessionsStore {
     const previous = this.filters;
     this.#savedFilters = loadSavedFilters();
     this.replaceFilters(this.#savedFilters.filters);
+    this.pendingR2UserSync = this.filters.r2UserID ?? "";
     this.dateFiltersWindowDays = this.#savedFilters.windowDays;
     this.filterPersistenceHeld = false;
     if (
@@ -392,6 +394,7 @@ class SessionsStore {
   }
 
   private firstReadWaiting = false;
+  private pendingR2UserSync = this.#savedFilters.filters.r2UserID ?? "";
 
   private async loadSidebarPage(params: SidebarIndexParams, signal: AbortSignal) {
     const version = ++this.loadVersion;
@@ -405,6 +408,16 @@ class SessionsStore {
         this.firstReadWaiting = true;
         await events.whenReady(1000);
         this.firstReadWaiting = false;
+      }
+      let syncError: string | null = null;
+      if (params.r2_user_id && this.pendingR2UserSync === params.r2_user_id) {
+        try {
+          await SessionsService.postApiV1R2SyncUser({ user_id: params.r2_user_id }, { signal });
+          if (this.loadVersion === version) this.pendingR2UserSync = "";
+        } catch (error) {
+          if (isAbortError(error)) throw error;
+          syncError = failureMessage(error);
+        }
       }
       const index = await SessionsService.getApiV1SessionsSidebarIndex(params, { signal });
       if (this.loadVersion !== version) return;
@@ -425,7 +438,7 @@ class SessionsStore {
       this.nextCursor = index.next_cursor ?? null;
       this.total = index.total;
       void this.refreshArchiveEmpty(version);
-      this.sidebarLoadError = null;
+      this.sidebarLoadError = syncError;
       this.sidebarPageFailed = false;
     } catch (error) {
       if (this.loadVersion !== version) return;
@@ -1259,7 +1272,24 @@ class SessionsStore {
     const next = value.trim();
     if (next === (this.filters[field] ?? "")) return;
     this.filters[field] = next || undefined;
+    if (next) {
+      this.filters.r2UserID = undefined;
+      this.pendingR2UserSync = "";
+    }
     this.setActiveSession(null);
+    void this.load();
+  }
+
+  setR2UserFilter(userID: string) {
+    if (userID === (this.filters.r2UserID ?? "")) return;
+    this.filters.r2UserID = userID || undefined;
+    if (userID) {
+      this.filters.ownerName = undefined;
+      this.filters.ownerEmail = undefined;
+    }
+    this.pendingR2UserSync = userID;
+    this.setActiveSession(null);
+    this.resetPagination();
     void this.load();
   }
 
@@ -1267,7 +1297,7 @@ class SessionsStore {
    *  usage and analytics pages do not apply them. */
   get hasSessionListOnlyFilters(): boolean {
     const f = this.filters;
-    return f.labels.length > 0 || !!(f.pr || f.ownerName || f.ownerEmail);
+    return f.labels.length > 0 || !!(f.pr || f.ownerName || f.ownerEmail || f.r2UserID);
   }
 
   get hasActiveFilters(): boolean {
@@ -1306,6 +1336,7 @@ class SessionsStore {
       filters.pr = this.filters.pr;
       filters.ownerName = this.filters.ownerName;
       filters.ownerEmail = this.filters.ownerEmail;
+      filters.r2UserID = this.filters.r2UserID;
     }
     this.resetMachineResolution();
     this.filters = filters;

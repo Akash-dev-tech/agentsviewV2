@@ -76,7 +76,7 @@ type VersionInfo struct {
 // Bump it when a client-visible contract cannot be decoded safely by an older
 // CLI or daemon.
 const (
-	APIVersion = 28
+	APIVersion = 29
 	// SyncPendingAPIVersion reports catch-up in sync status.
 	SyncPendingAPIVersion = 15
 	// UsageWaitAPIVersion supports bounded usage waits and safe refresh retries.
@@ -132,6 +132,7 @@ type Server struct {
 	assetCache            *assetCache
 	activityReportFlights *kept.Flights[activity.CandidateArtifacts]
 	engine                *sync.Engine
+	r2Directory           *r2Directory
 	onDemandEngine        *sync.Engine
 	sessions              service.SessionService
 	broadcaster           *Broadcaster
@@ -319,6 +320,7 @@ func New(
 		activityReports:           newActivityReportCache(),
 		activityReportFlights:     &kept.Flights[activity.CandidateArtifacts]{},
 		engine:                    engine,
+		r2Directory:               newR2DirectoryFromEnv(),
 		sessions:                  sessions,
 		mux:                       http.NewServeMux(),
 		httpRemoteCleanupRegistry: new(remotesync.CleanupRegistry),

@@ -50,6 +50,8 @@ import type {
   PostApiV1SessionsUploadParams,
   PublishResponse,
   PutApiV1SessionsByIdParentPathParameters,
+  R2TeammatesResponse,
+  R2UserSyncInputBody,
   RenameRequest,
   ResolveSessionIDsResponse,
   ResumeRequest,
@@ -84,6 +86,76 @@ export const getApiV1Events = async (
   return orvalRequest<Response>(getGetApiV1EventsUrl(), {
     ...options,
     method: "GET",
+  });
+};
+
+export const getPostApiV1R2SyncUserUrl = () => {
+  return `/api/v1/r2/sync-user`;
+};
+
+/**
+ * @summary Import current snapshots for an R2 user
+ */
+export const postApiV1R2SyncUser = async (
+  r2UserSyncInputBody: R2UserSyncInputBody,
+  options?: Parameters<typeof orvalFetch>[1],
+): Promise<void> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return orvalFetch<void>(getPostApiV1R2SyncUserUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(r2UserSyncInputBody),
+  });
+};
+
+export const getGetApiV1R2TeammatesUrl = () => {
+  return `/api/v1/r2/teammates`;
+};
+
+/**
+ * @summary List R2 teammates
+ */
+export const getApiV1R2Teammates = async (
+  options?: Parameters<typeof orvalFetch>[1],
+): Promise<R2TeammatesResponse> => {
+  return orvalFetch<R2TeammatesResponse>(getGetApiV1R2TeammatesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPostApiV1R2TeammatesRefreshUrl = () => {
+  return `/api/v1/r2/teammates/refresh`;
+};
+
+/**
+ * @summary Refresh R2 teammate directory
+ */
+export const postApiV1R2TeammatesRefresh = async (
+  options?: Parameters<typeof orvalFetch>[1],
+): Promise<R2TeammatesResponse> => {
+  return orvalFetch<R2TeammatesResponse>(getPostApiV1R2TeammatesRefreshUrl(), {
+    ...options,
+    method: "POST",
   });
 };
 

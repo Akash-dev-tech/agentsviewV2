@@ -36,6 +36,9 @@ func (s *Server) registerSessionRoutes() {
 
 	s.get(group, "/sessions", "List sessions", s.humaListSessions)
 	s.get(group, "/sessions/sidebar-index", "List sidebar sessions", s.humaSidebarSessionIndex)
+	s.get(group, "/r2/teammates", "List R2 teammates", s.humaR2Teammates)
+	s.post(group, "/r2/teammates/refresh", "Refresh R2 teammate directory", s.humaRefreshR2Teammates)
+	s.post(group, "/r2/sync-user", "Import current snapshots for an R2 user", s.humaSyncR2User)
 	s.get(group, "/session-ids/resolve", "Resolve session IDs", s.humaResolveSessionIDs)
 	s.get(group, "/sessions/{id}", "Get session", s.humaGetSession)
 	s.get(group, "/sessions/{id}/messages", "List session messages", s.humaGetMessages)
@@ -83,6 +86,7 @@ type sessionFilterInput struct {
 	Machine          string            `query:"machine" doc:"Exact machine ID or alias, comma-separated IDs or aliases, or a unique whole display label (case-sensitive). Blank means all machines; unknown or ambiguous values return HTTP 400."`
 	OwnerName        string            `query:"owner_name" doc:"Filter by the name derived from an R2 owner's email local part"`
 	OwnerEmail       string            `query:"owner_email" doc:"Filter by the R2 owner email in the users/<email> object prefix"`
+	R2UserID         string            `query:"r2_user_id" doc:"Filter snapshots by exact R2 user ID"`
 	GitBranch        string            `query:"git_branch" doc:"Filter by git branch; opaque (project, branch) tokens from the /branches endpoint"`
 	Agent            string            `query:"agent" doc:"Filter by agent"`
 	Date             string            `query:"date" format:"date" doc:"Filter sessions active on this YYYY-MM-DD date"`
@@ -193,6 +197,9 @@ type resolveSessionIDsResponse struct {
 }
 
 func (in *sessionFilterInput) listFilter() (service.ListFilter, error) {
+	if in.R2UserID != "" && !parser.ValidR2UserID(in.R2UserID) {
+		return service.ListFilter{}, apiError(http.StatusBadRequest, "invalid R2 user ID")
+	}
 	if err := validateDateFilterValues(in.Date, in.DateFrom, in.DateTo, in.ActiveSince); err != nil {
 		return service.ListFilter{}, err
 	}
@@ -210,6 +217,7 @@ func (in *sessionFilterInput) listFilter() (service.ListFilter, error) {
 		Machine:            in.Machine,
 		OwnerName:          in.OwnerName,
 		OwnerEmail:         in.OwnerEmail,
+		R2UserID:           in.R2UserID,
 		GitBranch:          in.GitBranch,
 		Agent:              in.Agent,
 		Date:               in.Date,
@@ -245,6 +253,9 @@ func (in *sessionFilterInput) listFilter() (service.ListFilter, error) {
 }
 
 func (in *sessionFilterInput) dbFilter(includeChildren bool) (db.SessionFilter, error) {
+	if in.R2UserID != "" && !parser.ValidR2UserID(in.R2UserID) {
+		return db.SessionFilter{}, apiError(http.StatusBadRequest, "invalid R2 user ID")
+	}
 	if err := validateDateFilterValues(in.Date, in.DateFrom, in.DateTo, in.ActiveSince); err != nil {
 		return db.SessionFilter{}, err
 	}
@@ -276,6 +287,7 @@ func (in *sessionFilterInput) dbFilter(includeChildren bool) (db.SessionFilter, 
 		Machine:            in.Machine,
 		OwnerName:          in.OwnerName,
 		OwnerEmail:         in.OwnerEmail,
+		R2UserID:           in.R2UserID,
 		GitBranch:          in.GitBranch,
 		Agent:              in.Agent,
 		Date:               in.Date,
@@ -326,6 +338,10 @@ func (s *Server) humaListSessions(
 		}
 		return nil, serverError(err)
 	}
+	teammate := s.r2TeammateLookup(ctx)
+	for i := range page.Sessions {
+		page.Sessions[i].R2Teammate = teammate(page.Sessions[i].ID)
+	}
 	return &jsonOutput[*service.SessionList]{Body: page}, nil
 }
 
@@ -347,6 +363,10 @@ func (s *Server) humaSidebarSessionIndex(
 			return nil, apiError(http.StatusBadRequest, "invalid cursor")
 		}
 		return nil, serverError(err)
+	}
+	teammate := s.r2TeammateLookup(ctx)
+	for i := range index.Sessions {
+		index.Sessions[i].R2Teammate = teammate(index.Sessions[i].ID)
 	}
 	return &jsonOutput[db.SidebarSessionIndex]{Body: index}, nil
 }
@@ -387,6 +407,7 @@ func (s *Server) humaGetSession(
 	if detail == nil {
 		return nil, apiError(http.StatusNotFound, "session not found")
 	}
+	detail.R2Teammate = s.r2TeammateLookup(ctx)(detail.ID)
 	return &jsonOutput[*service.SessionDetail]{Body: detail}, nil
 }
 
@@ -400,6 +421,10 @@ func (s *Server) humaGetChildSessions(
 	}
 	if children == nil {
 		children = []db.Session{}
+	}
+	teammate := s.r2TeammateLookup(ctx)
+	for i := range children {
+		children[i].R2Teammate = teammate(children[i].ID)
 	}
 	return &jsonOutput[[]db.Session]{Body: children}, nil
 }

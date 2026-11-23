@@ -24238,6 +24238,9 @@ type GetAPIV1SessionsQuery struct {
 	// OwnerEmail Filter by the R2 owner email in the users/<email> object prefix
 	OwnerEmail *string `json:"owner_email,omitempty"`
 
+	// R2UserID Filter snapshots by exact R2 user ID
+	R2UserID *string `json:"r2_user_id,omitempty"`
+
 	// GitBranch Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
 	GitBranch *string `json:"git_branch,omitempty"`
 
@@ -29066,6 +29069,17 @@ type DBQualitySignals struct {
 	ShortPromptCount            int64 `json:"short_prompt_count"`
 	UnstructuredStart           bool  `json:"unstructured_start"`
 	Version                     int64 `json:"version"`
+}
+
+type DBR2Teammate struct {
+	Email   *string `json:"email,omitempty"`
+	Machine string  `json:"machine" validate:"required"`
+	Name    *string `json:"name,omitempty"`
+	UserID  string  `json:"user_id" validate:"required"`
+}
+
+func (d DBR2Teammate) Validate() error {
+	return runtime.ConvertValidatorError(typesValidator.Struct(d))
 }
 
 type DBRecallEntry = db.RecallEntry

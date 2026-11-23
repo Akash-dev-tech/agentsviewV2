@@ -24,6 +24,10 @@ export type GetApiV1SessionsSidebarIndexParams = {
    */
   owner_email?: string;
   /**
+   * Filter snapshots by exact R2 user ID
+   */
+  r2_user_id?: string;
+  /**
    * Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
    */
   git_branch?: string;

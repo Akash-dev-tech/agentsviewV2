@@ -869,6 +869,11 @@ func sessionFilterPredicates(
 	if name, email := strings.TrimSpace(f.OwnerName), strings.TrimSpace(f.OwnerEmail); name != "" || email != "" {
 		preds = append(preds, r2OwnerPredicates(b, q("file_path"), name, email)...)
 	}
+	if f.R2UserID != "" {
+		owner, r2 := r2OwnerPath(b, q("file_path"))
+		preds = append(preds, r2...)
+		preds = append(preds, owner+" = "+b.Add(f.R2UserID))
+	}
 	if f.GitBranch != "" {
 		preds = append(preds, BranchPairPredicate(
 			q("project"), q("git_branch"), f.GitBranch,
@@ -951,20 +956,9 @@ func sessionFilterPredicates(
 // The name filter treats dots, underscores, and hyphens in the email's
 // local part as spaces. The domain and the remaining object key are ignored.
 func r2OwnerPredicates(b *QueryBuilder, path, name, email string) []string {
-	position := b.dialect.Position
-	bucketAndKey := "substring(" + path + ", 6)"
-	bucketEnd := position(bucketAndKey, "'/'")
-	key := "substring(" + bucketAndKey + ", " + bucketEnd + " + 1)"
-	ownerAndObject := "substring(" + key + ", 7)"
-	owner := "substring(" + ownerAndObject + ", 1, NULLIF(" + position(ownerAndObject, "'/'") + ", 0) - 1)"
-	at := position(owner, "'@'")
-	preds := []string{
-		position(path, "'s3://'") + " = 1",
-		bucketEnd + " > 1",
-		position(key, "'users/'") + " = 1",
-		at + " > 1",
-		at + " < length(" + owner + ")",
-	}
+	owner, preds := r2OwnerPath(b, path)
+	at := b.dialect.Position(owner, "'@'")
+	preds = append(preds, at+" > 1", at+" < length("+owner+")")
 	if name != "" {
 		localPart := "substring(" + owner + ", 1, NULLIF(" + at + ", 0) - 1)"
 		replaceFn := "replace"
@@ -981,6 +975,20 @@ func r2OwnerPredicates(b *QueryBuilder, path, name, email string) []string {
 		preds = append(preds, b.ContainsPredicate(owner, email))
 	}
 	return preds
+}
+
+func r2OwnerPath(b *QueryBuilder, path string) (string, []string) {
+	position := b.dialect.Position
+	bucketAndKey := "substring(" + path + ", 6)"
+	bucketEnd := position(bucketAndKey, "'/'")
+	key := "substring(" + bucketAndKey + ", " + bucketEnd + " + 1)"
+	ownerAndObject := "substring(" + key + ", 7)"
+	owner := "substring(" + ownerAndObject + ", 1, NULLIF(" + position(ownerAndObject, "'/'") + ", 0) - 1)"
+	return owner, []string{
+		position(path, "'s3://'") + " = 1",
+		bucketEnd + " > 1",
+		position(key, "'users/'") + " = 1",
+	}
 }
 
 // HasAnnotationFilter reports whether the filter selects sessions by label

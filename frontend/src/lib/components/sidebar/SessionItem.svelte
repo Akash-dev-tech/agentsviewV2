@@ -11,6 +11,7 @@
   import { starred } from "../../stores/starred.svelte.js";
   import { formatCount, formatRelativeTime, formatTimestamp } from "../../utils/format.js";
   import { sessionMachineDisplay } from "../../utils/machines.js";
+  import { teammateLabel } from "../../utils/teammates.js";
   import { agentInk as getAgentInk, agentLabel, entrypointBadge } from "../../utils/agents.js";
   import {
     normalizeMessagePreview,
@@ -533,12 +534,16 @@
           {#if childCount > 0 && !onToggleExpand}
             <span class="continuation-badge">x{continuationCount}</span>
           {/if}
-          {#if !compact && (!hideAgent || showMachine)}
+          {#if session.r2_teammate || (!compact && (!hideAgent || showMachine))}
             <span class="meta-end">
-              {#if showMachine}
+              {#if session.r2_teammate}
+                {@const teammate = teammateLabel(session.r2_teammate)}
+                <span class="machine-tag" title={teammate}>{teammate}</span>
+                <span class="machine-tag" title={session.r2_teammate.machine}>{session.r2_teammate.machine}</span>
+              {:else if showMachine}
                 <span class="machine-tag" title={machineDisplay.title}>{machineDisplay.label}</span>
               {/if}
-              {#if !hideAgent}
+              {#if !hideAgent || session.r2_teammate}
                 <!-- The entrypoint (for example sdk-ts) is detail, so it lives in
                      the tooltip rather than on the row. -->
                 <span

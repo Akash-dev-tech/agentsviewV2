@@ -2266,6 +2266,21 @@ components:
         - no_code_context_count
         - runaway_tool_loop_count
       type: object
+    DbR2Teammate:
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+        machine:
+          type: string
+        name:
+          type: string
+        user_id:
+          type: string
+      required:
+        - user_id
+        - machine
+      type: object
     DbRecallEntry:
       additionalProperties: false
       properties:
@@ -2805,6 +2820,8 @@ components:
           type: boolean
         quality_signals:
           $ref: "#/components/schemas/DbQualitySignals"
+        r2_teammate:
+          $ref: "#/components/schemas/DbR2Teammate"
         relationship_type:
           type: string
         secret_leak_count:
@@ -3323,6 +3340,8 @@ components:
           type: string
         project_assigned:
           type: boolean
+        r2_teammate:
+          $ref: "#/components/schemas/DbR2Teammate"
         relationship_type:
           type: string
         session_kind:
@@ -6172,6 +6191,41 @@ components:
         - view_url
         - raw_url
       type: object
+    R2TeammatesResponse:
+      additionalProperties: false
+      properties:
+        configured:
+          type: boolean
+        error:
+          type: string
+        users:
+          items:
+            $ref: "#/components/schemas/R2User"
+          type: array
+      required:
+        - configured
+        - users
+      type: object
+    R2User:
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        user_id:
+          type: string
+      required:
+        - user_id
+      type: object
+    R2UserSyncInputBody:
+      additionalProperties: false
+      properties:
+        user_id:
+          type: string
+      required:
+        - user_id
+      type: object
     RawSyncManifestResponse:
       additionalProperties: false
       properties:
@@ -7795,6 +7849,8 @@ components:
           type: boolean
         quality_signals:
           $ref: "#/components/schemas/DbQualitySignals"
+        r2_teammate:
+          $ref: "#/components/schemas/DbR2Teammate"
         relationship_type:
           type: string
         secret_leak_count:
@@ -17579,6 +17635,233 @@ paths:
       summary: Push to PostgreSQL
       tags:
         - Push
+  /api/v1/r2/sync-user:
+    post:
+      operationId: post-api-v1-r2-sync-user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/R2UserSyncInputBody"
+        required: true
+      responses:
+        "204":
+          description: No Content
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Conflict
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Unprocessable Entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Implemented
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Gateway
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Service Unavailable
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Gateway Timeout
+      summary: Import current snapshots for an R2 user
+      tags:
+        - Sessions
+  /api/v1/r2/teammates:
+    get:
+      operationId: get-api-v1-r2-teammates
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/R2TeammatesResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Conflict
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Implemented
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Gateway
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Service Unavailable
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Gateway Timeout
+      summary: List R2 teammates
+      tags:
+        - Sessions
+  /api/v1/r2/teammates/refresh:
+    post:
+      operationId: post-api-v1-r2-teammates-refresh
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/R2TeammatesResponse"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Request
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Unauthorized
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Forbidden
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Found
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Conflict
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Internal Server Error
+        "501":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not Implemented
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Bad Gateway
+        "503":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Service Unavailable
+        "504":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Gateway Timeout
+      summary: Refresh R2 teammate directory
+      tags:
+        - Sessions
   /api/v1/raw-sync/health:
     get:
       operationId: get-api-v1-raw-sync-health
@@ -20594,6 +20877,13 @@ paths:
           schema:
             description: Filter by the R2 owner email in the users/<email> object prefix
             type: string
+        - description: Filter snapshots by exact R2 user ID
+          explode: false
+          in: query
+          name: r2_user_id
+          schema:
+            description: Filter snapshots by exact R2 user ID
+            type: string
         - description: Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
           explode: false
           in: query
@@ -20995,6 +21285,13 @@ paths:
           name: owner_email
           schema:
             description: Filter by the R2 owner email in the users/<email> object prefix
+            type: string
+        - description: Filter snapshots by exact R2 user ID
+          explode: false
+          in: query
+          name: r2_user_id
+          schema:
+            description: Filter snapshots by exact R2 user ID
             type: string
         - description: Filter by git branch; opaque (project, branch) tokens from the /branches endpoint
           explode: false

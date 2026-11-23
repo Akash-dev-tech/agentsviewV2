@@ -1,4 +1,9 @@
 {
+  "sidebar_r2_teammate": "チームメンバー",
+  "sidebar_r2_all_users": "すべてのユーザー",
+  "sidebar_r2_search_users": "名前またはメールで検索",
+  "sidebar_r2_no_users": "一致するメンバーがいません",
+  "sidebar_r2_refresh_users": "メンバー一覧を更新",
   "sidebar_filters_owner_name": "所有者の名前",
   "sidebar_filters_owner_email": "所有者のメールアドレス",
   "data_reclassify_session_preview_filtered_empty": "プレビューするセッションがありません。自動セッションは非表示です。含めるにはフィルターボタンを使用してください。",

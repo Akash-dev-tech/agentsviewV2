@@ -88,6 +88,9 @@ func FindCodexS3ParentSessionObjects(
 	if err != nil {
 		return nil
 	}
+	if _, snapshot := R2SnapshotFromURI(childURI); snapshot {
+		objects = latestR2Snapshots(objects)
+	}
 	byKey := make(map[string]S3Object)
 	for _, obj := range objects {
 		if _, withinRoot := s3RelativePath(root, obj.URI); !withinRoot {
@@ -152,6 +155,10 @@ func codexS3RootURI(configuredRoot, sessionURI string) (string, bool) {
 	if !strings.HasPrefix(sessionURI, "s3://") {
 		return "", false
 	}
+	if k, snapshot := R2SnapshotFromURI(sessionURI); snapshot {
+		bucket, _ := parseS3URI(sessionURI)
+		return "s3://" + bucket + "/users/" + k.UserID + "/devices/" + k.DeviceID + "/codex", true
+	}
 	if configuredRoot != "" {
 		configuredRoot = strings.TrimSuffix(configuredRoot, "/")
 		if !strings.HasPrefix(configuredRoot, "s3://") {
@@ -187,6 +194,9 @@ func codexS3RootURI(configuredRoot, sessionURI string) (string, bool) {
 // configured Codex sessions root represented by a rollout URI.
 func CodexS3SessionIndexURI(sessionURI string) (string, bool) {
 	if !strings.HasPrefix(sessionURI, "s3://") {
+		return "", false
+	}
+	if _, snapshot := R2SnapshotFromURI(sessionURI); snapshot {
 		return "", false
 	}
 	trimmed := strings.TrimPrefix(sessionURI, "s3://")
