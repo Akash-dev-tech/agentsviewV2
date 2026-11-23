@@ -7,6 +7,10 @@ Copy the HTTPS clone URL from this repository's **Code** menu. Run
 
 Download the matching file from **Releases** in this repository. Place the
 binary in the root of the clone with `.env.example` and `scripts/`.
+If your bucket contains immutable snapshots, use a release that includes
+snapshot support or build the current checkout as described in
+[AGENT_INSTALL.md](AGENT_INSTALL.md). The launchers use the executable in the
+clone. Updating the checkout leaves that executable unchanged.
 
 | System | Download | Check it from the clone |
 | --- | --- | --- |
@@ -52,6 +56,26 @@ Create the directory if it does not exist:
 | PowerShell | Git Bash and macOS |
 | --- | --- |
 | `New-Item -ItemType Directory -Force "$env:USERPROFILE\.agentsview"` | `mkdir -p ~/.agentsview` |
+
+For immutable snapshots, use the shared `users` prefix for the agents you have
+in the bucket. Objects use this layout:
+
+```text
+users/<user_id>/devices/<device_id>/<agent>/snapshots/<snapshot_id>/p/<path_hash>/<filename>.jsonl
+```
+
+```toml
+s3_only = true
+
+[agents.claude]
+dirs = ["s3://${R2_BUCKET}/users"]
+
+[agents.codex]
+dirs = ["s3://${R2_BUCKET}/users"]
+```
+
+For legacy uploads, configure the provider roots that match their object keys.
+You can include both layouts in the same `dirs` array.
 
 ```toml
 s3_only = true
@@ -124,11 +148,14 @@ open the URL printed by the serve script. In the sidebar, open **Filters**
 and turn off **Hide single-turn** to see sessions with a single prompt.
 Clear any project or machine filters that exclude your R2 sessions.
 
-To filter by owner, store transcripts under `users/<email>/...` in the bucket
-and configure the provider roots beneath that prefix. In the session sidebar,
-open **Filters**, enter an **Owner name** or **Owner email**, and press Enter.
-The name filter reads the part of the email before `@` and treats dots,
-underscores, and hyphens as spaces. Both filters accept partial matches.
+For immutable snapshots, use the **Teammate** dropdown in the session sidebar.
+AgentsView shows the newest upload for each logical transcript, so several
+objects in the bucket can appear as one session.
+
+For legacy uploads under `users/<email>/...`, open **Filters**, enter an
+**Owner name** or **Owner email**, and press Enter. The name filter reads the
+part of the email before `@` and treats dots, underscores, and hyphens as
+spaces. Both filters accept partial matches.
 
 ## Package a release
 

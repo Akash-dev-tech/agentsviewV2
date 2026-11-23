@@ -31,10 +31,12 @@ platform commands and [AGENTS.md](AGENTS.md) for repository rules.
    Parse the file as literal key-value pairs and pass credentials through the
    environment of the process that needs them.
 2. **Install and check the fork's binary.** Use the matching download from
-   this repository's GitHub Releases if available. On Windows x64, place
+   this repository's GitHub Releases. For immutable snapshots, check that the
+   release includes snapshot support. Updating the checkout leaves any binary
+   already in the clone unchanged. On Windows x64, place
    `agentsview.exe` in the clone root. On macOS, extract the archive matching
-   `uname -m` into the clone root. If the download is unavailable, build this
-   checkout with `make build-release`. Use the repository's Go, C compiler,
+   `uname -m` into the clone root. If a suitable download is unavailable,
+   build this checkout with `make build-release`. Use the repository's Go, C compiler,
    Node, npm, and Make requirements. On Windows, run the build in MSYS2 with
    `make SHELL=/usr/bin/bash build-release` and copy the output named
    `agentsview` to `agentsview.exe`. Check the version by invoking the binary
