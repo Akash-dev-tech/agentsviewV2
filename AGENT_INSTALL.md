@@ -87,3 +87,28 @@ platform commands and [AGENTS.md](AGENTS.md) for repository rules.
    If the Worker settings are present, confirm the **Teammate** filter lists
    resolved names and emails.
    Report the dashboard URL, the verified session count, and any blockers.
+
+## If the bucket has snapshots but sync finds no new sessions
+
+1. **Check the executable the launcher uses.** Run `./agentsview.exe version`
+   from the clone on Windows or `./agentsview version` on macOS. Compare the
+   reported commit with the checkout. If the executable predates snapshot
+   support, build the current checkout or get a release with snapshot support.
+   Ask before replacing the installed executable, and keep a backup.
+2. **Check the roots against the object keys.** If a Codex key starts with
+   `users/usr_.../devices/dev_.../codex/snapshots/`, add
+   `"s3://${R2_BUCKET}/users"` to `dirs` under `[agents.codex]`. Do the same
+   under `[agents.claude]` if the bucket contains Claude snapshots. Keep any
+   existing roots that still contain legacy transcripts.
+3. **Verify before changing the live setup.** Set `AGENTSVIEW_DATA_DIR` to a
+   scratch directory with an appropriate `config.toml` and set
+   `AGENTSVIEW_NO_DAEMON=1`. Run `source sync --rescan` with the rebuilt
+   executable and the R2 variables from `.env`.
+   Check how many sessions the scratch archive contains. After the user approves
+   the live changes, back up the existing configuration, apply the verified
+   roots, and rerun the normal sync command against the existing archive.
+4. **Compare the right counts.** R2 counts every object, including older
+   snapshots and metadata. AgentsView imports the newest snapshot for each
+   user, device, agent, and path hash. Three snapshot objects can therefore
+   produce two sessions. If the archive contains the sessions but the sidebar
+   is empty, clear the active filters and turn off **Hide single-turn**.
