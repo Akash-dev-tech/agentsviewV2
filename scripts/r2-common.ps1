@@ -16,6 +16,7 @@ $required = @(
     'AWS_REGION', 'AWS_REQUEST_CHECKSUM_CALCULATION',
     'AWS_RESPONSE_CHECKSUM_VALIDATION', 'AGENTSVIEW_S3_ONLY'
 )
+$allowed = $required + @('AV_WORKER_URL', 'AV_ADMIN_SECRET')
 $values = @{}
 # ReadAllLines removes CRLF and accepts UTF-8 files with a BOM.
 $lineNumber = 0
@@ -23,7 +24,7 @@ foreach ($line in [IO.File]::ReadAllLines($envFile)) {
     $lineNumber++
     if ($line -match '^\s*(#|$)') { continue }
     if ($line -cnotmatch '^\s*([A-Z][A-Z0-9_]*)\s*=(.*)$' -or
-        $Matches[1] -cnotin $required) {
+        $Matches[1] -cnotin $allowed) {
         throw "Unsupported .env entry on line $lineNumber. Use the names in .env.example."
     }
     $values[$Matches[1]] = $Matches[2].Trim()

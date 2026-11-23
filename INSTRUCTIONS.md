@@ -32,11 +32,14 @@ Git Bash and macOS:
 cp .env.example .env
 ```
 
-Edit only **`R2_BUCKET`**, **`AWS_ACCESS_KEY_ID`**,
+Fill in **`R2_BUCKET`**, **`AWS_ACCESS_KEY_ID`**,
 **`AWS_SECRET_ACCESS_KEY`**, and **`AWS_ENDPOINT_URL`** in `.env`. Use credentials
 with read access to the bucket and the S3 API endpoint shown in the R2
 dashboard. Keep each value unquoted on one line. Windows CRLF line endings work
 in both shells.
+
+For teammate lookup, also uncomment and fill in `AV_WORKER_URL` with the
+uploader Worker's HTTPS base URL and `AV_ADMIN_SECRET` with its admin secret.
 
 ## 3. Configure the session prefixes
 

@@ -11,6 +11,11 @@ Your part is to fill in `R2_BUCKET`, `AWS_ACCESS_KEY_ID`,
 read access to the bucket. Enter the account's R2 S3 API endpoint, without a
 bucket path, and keep the existing defaults in the template.
 
+To show teammate names, emails, and machine names, also uncomment and fill in
+`AV_WORKER_URL` and `AV_ADMIN_SECRET` in `.env`. Use the HTTPS base URL of the
+uploader Worker and its admin secret. The launchers pass both values to the
+server through its process environment.
+
 ## Instructions for the agent
 
 Work from the repository root. Read [INSTRUCTIONS.md](INSTRUCTIONS.md) for
@@ -18,9 +23,10 @@ platform commands and [AGENTS.md](AGENTS.md) for repository rules.
 
 1. **Prepare `.env`.** Confirm Git ignores `.env` with
    `git check-ignore .env`. If the file is missing, copy `.env.example` to
-   `.env`. Preserve existing values. If any of the four required values are
-   missing or still placeholders, ask the user to fill them in locally and
-   confirm when ready. Continue installing the binary while they do that.
+   `.env`. Preserve existing values. If any required R2 setting is missing or
+   still a placeholder, ask the user to fill it in locally and confirm when
+   ready. For teammate lookup, ask the user to fill in both Worker settings
+   locally. Continue installing the binary while they do that.
    Keep credentials out of chat, terminal output, command arguments, and Git.
    Parse the file as literal key-value pairs and pass credentials through the
    environment of the process that needs them.
@@ -40,7 +46,9 @@ platform commands and [AGENTS.md](AGENTS.md) for repository rules.
    --region auto --query "Contents[].Key" --output json` with the credentials
    set in its process environment. Use an equivalent authenticated S3 client
    if AWS CLI is unavailable. Match transcript keys to supported providers
-   and retain each distinct provider root. For Codex, if a rollout key is
+   and retain each distinct provider root. For immutable snapshot keys under
+   `users/<user_id>/devices/<device_id>/<agent>/snapshots/`, use `users` as
+   the root for each of Claude and Codex found there. For legacy Codex, if a key is
    `machine/codex/sessions/2026/11/22/rollout-….jsonl`, use
    `machine/codex/sessions` as the root. A harvested archive can instead have
    a root like `machine/raw/codex`. Skip unrelated files. If the listing
@@ -74,4 +82,6 @@ platform commands and [AGENTS.md](AGENTS.md) for repository rules.
    [INSTRUCTIONS.md](INSTRUCTIONS.md) to check the entire archive when needed.
    In the browser sidebar, turn off **Hide single-turn** if the default
    session list is empty. Enable **Include automated sessions** if applicable.
+   If the Worker settings are present, confirm the **Teammate** filter lists
+   resolved names and emails.
    Report the dashboard URL, the verified session count, and any blockers.
